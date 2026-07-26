@@ -12,7 +12,7 @@ import (
 
 type Service interface {
 	SignIn(req LoginRequest) (AuthResponse, error)
-	Register(req RegisterRequest) (AuthResponse, error)
+	Register(req RegisterRequest) (RegisterResponse, error)
 }
 
 type service struct {
@@ -23,17 +23,17 @@ func NewLoginService(repo Repository) Service {
 	return &service{repo}
 }
 
-func (s *service) Register(req RegisterRequest) (AuthResponse, error) {
+func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 	// 1. Cek apakah email sudah terdaftar
 	existingUser, _ := s.repo.FindByEmail(req.Email)
 	if existingUser != nil && existingUser.ID != "" {
-		return AuthResponse{}, errors.New("email sudah terdaftar")
+		return RegisterResponse{}, errors.New("email sudah terdaftar")
 	}
 
 	// 2. Hash Password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return AuthResponse{}, errors.New("gagal mengenkripsi password")
+		return RegisterResponse{}, errors.New("gagal mengenkripsi password")
 	}
 
 	// 3. Buat User baru
@@ -48,18 +48,12 @@ func (s *service) Register(req RegisterRequest) (AuthResponse, error) {
 
 	// 4. Simpan ke database
 	if err := s.repo.CreateUser(newUser); err != nil {
-		return AuthResponse{}, errors.New("gagal menyimpan data user")
+		return RegisterResponse{}, errors.New("gagal menyimpan data user")
 	}
 
-	// 5. Generate Token
-	token, err := utils.GenerateJWT(newUser.ID, newUser.Email)
-	if err != nil {
-		return AuthResponse{}, errors.New("gagal membuat token")
-	}
-
-	return AuthResponse{
-		Token: token,
-		User:  newUser,
+	return  RegisterResponse{
+		Status: "ok",
+		Message: "Register successfully",
 	}, nil
 }
 
@@ -82,9 +76,24 @@ func (s *service) SignIn(req LoginRequest) (AuthResponse, error) {
 		return AuthResponse{}, errors.New("gagal membuat token")
 	}
 
+
+	refresh_token, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return AuthResponse{}, errors.New("Gagal membuat refresh token")
+	}
+
+
 	return AuthResponse{
-		Token: token,
-		User:  user,
+		Status : "ok",
+		Message: "Login Successfully",
+		Data : AuthData{
+			AccessToken: token,
+			RefreshToken: refresh_token,
+			User: UserResponse{
+				ID : user.ID,
+				Name: user.FirstName + user.LastName,
+			},
+		},
 	}, nil
 }
 

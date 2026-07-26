@@ -38,6 +38,6 @@ func (c *RegisterController) Register(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status": "success",
-		"data":   response,
+		"message" : response,
 	})
 }

@@ -31,7 +31,6 @@ func NewLoginRepository(db *gorm.DB) Repository {
 func (r *repository) FindByEmail(email string) (*models.User, error ) {
 	var user models.User
 	err := r.db.Where("email = ?", email).First(&user).Error
-
 	return &user, err
 }
 
