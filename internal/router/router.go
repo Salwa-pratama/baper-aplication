@@ -1,7 +1,7 @@
 package router
 
 import (
-	"baper/internal/modules/auth/login"
+	login "baper/internal/modules/auth"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -15,6 +15,6 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	app.Use(logger.New())
 
 	api := app.Group("/api")
-	
+
 	login.InitRoutes(api, db)
 }

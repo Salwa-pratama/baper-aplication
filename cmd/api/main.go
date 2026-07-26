@@ -44,7 +44,7 @@ func main() {
 	// Listen Server
 	port := os.Getenv("APP_PORT")
 	// log.Fatal(app.Listen(":" + config.Config.Port)) // TODO: define or import config
-	log.Printf("Server running on port %s", port)
+	log.Printf("Server running on http://localhost:%s", port)
 	log.Fatal(app.Listen(":"+ port)) // Fallback port for now
 
 }
