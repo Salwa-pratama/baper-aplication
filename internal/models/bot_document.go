@@ -11,4 +11,6 @@ type BotDocument struct {
 	VectorStoreID string    `gorm:"type:varchar(100)"`
 	Status        string    `gorm:"type:varchar(50)"`
 	UploadedAt    time.Time
+
+	Business Business `gorm:"foreignKey:BusinessID"`
 }

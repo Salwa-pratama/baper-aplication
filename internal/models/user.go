@@ -12,4 +12,7 @@ type User struct {
 	Phone        string    `gorm:"type:varchar(20);not null"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+
+	AuthTokens []AuthToken `gorm:"foreignKey:UserID"`
+	Businesses []Business  `gorm:"foreignKey:UserID"`
 }

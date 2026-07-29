@@ -11,4 +11,8 @@ type Customer struct {
 	Address       string    `gorm:"type:text"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+
+	Business     Business      `gorm:"foreignKey:BusinessID"`
+	ChatSessions []ChatSession `gorm:"foreignKey:CustomerID"`
+	Orders       []Order       `gorm:"foreignKey:CustomerID"`
 }

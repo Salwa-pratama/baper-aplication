@@ -10,4 +10,6 @@ type OrderRecapDraft struct {
 	ConfidenceScore float64   `gorm:"type:decimal(5,2)"`
 	Status          string    `gorm:"type:varchar(50)"`
 	CreatedAt       time.Time
+
+	ChatSession ChatSession `gorm:"foreignKey:SessionID"`
 }

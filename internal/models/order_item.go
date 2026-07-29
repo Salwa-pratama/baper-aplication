@@ -7,4 +7,7 @@ type OrderItem struct {
 	ProductID string  `gorm:"type:varchar(36);not null"`
 	Quantity  int     `gorm:"type:int;not null;default:1"`
 	Price     float64 `gorm:"type:decimal(15,2);not null"`
+
+	Order   Order   `gorm:"foreignKey:OrderID"`
+	Product Product `gorm:"foreignKey:ProductID"`
 }

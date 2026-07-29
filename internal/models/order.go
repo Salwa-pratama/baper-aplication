@@ -12,4 +12,9 @@ type Order struct {
 	Status      string    `gorm:"type:varchar(50);not null"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+
+	Business    Business    `gorm:"foreignKey:BusinessID"`
+	Customer    Customer    `gorm:"foreignKey:CustomerID"`
+	ChatSession ChatSession `gorm:"foreignKey:SessionID"`
+	OrderItems  []OrderItem `gorm:"foreignKey:OrderID"`
 }

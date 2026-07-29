@@ -11,4 +11,7 @@ type Product struct {
 	Price       float64   `gorm:"type:decimal(15,2);not null"`
 	Stock       int       `gorm:"type:int;not null;default:0"`
 	CreatedAt   time.Time
+
+	Business   Business    `gorm:"foreignKey:BusinessID"`
+	OrderItems []OrderItem `gorm:"foreignKey:ProductID"`
 }

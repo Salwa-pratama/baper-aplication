@@ -9,4 +9,6 @@ type AuthToken struct {
 	Token     string    `gorm:"type:text;not null"`
 	ExpiresAt time.Time
 	CreatedAt time.Time
+
+	User User `gorm:"foreignKey:UserID"`
 }

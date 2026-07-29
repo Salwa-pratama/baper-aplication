@@ -10,4 +10,6 @@ type Message struct {
 	Content    string    `gorm:"type:text;not null"`
 	Metadata   string    `gorm:"type:json"`
 	CreatedAt  time.Time
+
+	ChatSession ChatSession `gorm:"foreignKey:SessionID"`
 }

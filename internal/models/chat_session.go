@@ -10,4 +10,10 @@ type ChatSession struct {
 	StartedAt  time.Time
 	EndedAt    *time.Time
 	Status     string    `gorm:"type:varchar(50)"`
+
+	Bot              Bot               `gorm:"foreignKey:BotID"`
+	Customer         Customer          `gorm:"foreignKey:CustomerID"`
+	Messages         []Message         `gorm:"foreignKey:SessionID"`
+	OrderRecapDrafts []OrderRecapDraft `gorm:"foreignKey:SessionID"`
+	Orders           []Order           `gorm:"foreignKey:SessionID"`
 }

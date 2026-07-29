@@ -11,7 +11,7 @@ import (
 
 func DbSupabase() *gorm.DB {
 
-	godotenv.Load()
+	godotenv.Overload()
 
 	dsn := os.Getenv("SUPABASE_URL")
 
