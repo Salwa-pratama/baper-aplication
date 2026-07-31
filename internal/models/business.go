@@ -1,6 +1,12 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+
+	"gorm.io/gorm"
+)
 
 // Business Model
 type Business struct {
@@ -18,4 +24,13 @@ type Business struct {
 	Customers    []Customer    `gorm:"foreignKey:BusinessID"`
 	Products     []Product     `gorm:"foreignKey:BusinessID"`
 	Orders       []Order       `gorm:"foreignKey:BusinessID"`
+}
+
+
+// Hook ini otomatis kepanggil GORM sebelum proses INSERT
+func (b *Business) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == "" {
+		b.ID = uuid.New().String()
+	}
+	return nil
 }

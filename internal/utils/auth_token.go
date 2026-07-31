@@ -1,10 +1,16 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+)
+
+var (
+	ErrInvalidToken = errors.New("invalid token")
+	ErrClaimNotFound = errors.New("user_id claim not found")
 )
 
 // helper function untuk membuat JWT
@@ -35,4 +41,29 @@ func GenerateRefreshToken(userID string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(refreshSecret))
+}
+
+
+// (misal karena verifikasi udah dilakuin di middleware sebelumnya)
+func GetUserIDFromToken(tokenString string) (string, error) {
+	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return "", ErrInvalidToken
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", ErrInvalidToken
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		// coba fallback ke "sub" kalau pakai standard claim
+		userID, ok = claims["sub"].(string)
+		if !ok {
+			return "", ErrClaimNotFound
+		}
+	}
+
+	return userID, nil
 }

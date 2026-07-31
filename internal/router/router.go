@@ -2,6 +2,7 @@ package router
 
 import (
 	login "baper/internal/modules/auth"
+	"baper/internal/modules/features/busines"
 	"baper/internal/modules/features/chat"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,4 +20,5 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 
 	login.InitRoutes(api, db)
 	chat.InitRoutes(api,db)
+	busines.InitRoutes(api, db)
 }
