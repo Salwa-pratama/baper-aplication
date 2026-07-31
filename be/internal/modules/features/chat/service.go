@@ -8,6 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"baper/internal/models"
 )
 
 type Service interface {
@@ -90,8 +93,62 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 	log.Printf("Isi pesan : %s",msg.Text.Body)
 	log.Printf("Nama Customer : %s",contact.Profile.Name)
 
-	// Generate content promt
+	// 1. Dapatkan Bot dari PhoneNumberID (Nomor WhatsApp Business)
+	bot, err := s.repo.FindBotByBusinessPhone(phone.PhoneNumberID)
+	if err != nil {
+		log.Printf("Gagal menemukan bot dengan nomor %s: %v", phone.PhoneNumberID, err)
+		return Response{
+			Status:  "error",
+			Message: "Bot tidak ditemukan",
+			Data:    nil,
+		}, err
+	}
 
+	// 2. Dapatkan Customer, jika belum ada maka Create
+	customer, errCust := s.repo.FindCustomerByPhone(msg.From)
+	if errCust != nil {
+		// Asumsi error karena tidak ketemu (gorm.ErrRecordNotFound)
+		log.Printf("Customer %s belum ada, membuat baru...", msg.From)
+		customer = &models.Customer{
+			BusinessID:    bot.BusinessID,
+			WaPhoneNumber: msg.From,
+			Name:          contact.Profile.Name,
+		}
+		if errCreate := s.repo.CreateCustomer(customer); errCreate != nil {
+			log.Printf("Gagal membuat customer: %v", errCreate)
+		}
+	} else {
+		log.Printf("Customer %s sudah ada (ID: %s)", msg.From, customer.ID)
+	}
+
+	// 3. Dapatkan atau Buat Chat Session
+	session, errSess := s.repo.FindActiveChatSession(bot.ID, customer.ID)
+	if errSess != nil {
+		log.Printf("Tidak ada session aktif, membuat session baru...")
+		session = &models.ChatSession{
+			BotID:      bot.ID,
+			CustomerID: customer.ID,
+			Status:     "active",
+			StartedAt:  time.Now(),
+		}
+		if errSession := s.repo.SaveChatSession(session); errSession != nil {
+			log.Printf("Gagal membuat chat session: %v", errSession)
+		}
+	} else {
+		log.Printf("Menggunakan chat session aktif (ID: %s)", session.ID)
+	}
+
+	// 4. Simpan Pesan Masuk (Customer)
+	incomingMsg := &models.Message{
+		SessionID:  session.ID,
+		SenderType: "customer",
+		Content:    msg.Text.Body,
+	}
+	if errSave := s.repo.SaveMessage(incomingMsg); errSave != nil {
+		log.Printf("Gagal menyimpan pesan masuk: %v", errSave)
+	}
+
+	// Generate content promt
 	content, gagal := s.repo.GenerateContent(msg.Text.Body)
 	log.Print(content)
 	if gagal != nil {
@@ -99,9 +156,19 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 	}
 
 	// 🔥 Panggil fungsi SendMessage untuk mengirim balasan
-	err := s.SendMessage(msg.From, content)
+	err = s.SendMessage(msg.From, content)
 	if err != nil {
 		log.Println("Gagal balas pesan:", err)
+	} else {
+		// 5. Simpan Pesan Keluar (Bot AI)
+		outgoingMsg := &models.Message{
+			SessionID:  session.ID,
+			SenderType: "bot",
+			Content:    content,
+		}
+		if errSaveOut := s.repo.SaveMessage(outgoingMsg); errSaveOut != nil {
+			log.Printf("Gagal menyimpan pesan bot: %v", errSaveOut)
+		}
 	}
 
 	return Response{

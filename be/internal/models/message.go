@@ -1,6 +1,11 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 // Message Model
 type Message struct {
@@ -13,3 +18,16 @@ type Message struct {
 
 	ChatSession ChatSession `gorm:"foreignKey:SessionID"`
 }
+
+// Hook ini otomatis kepanggil GORM sebelum proses INSERT
+func (m *Message) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	// Postgres will reject empty string "" for JSON type, so we use valid JSON "{}"
+	if m.Metadata == "" {
+		m.Metadata = "{}"
+	}
+	return nil
+}
+

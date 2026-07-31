@@ -12,6 +12,7 @@ type Repository interface {
 	CreateBusiness(ctx context.Context,userID string,busines *models.Business) error
 	ExistingBusiness(ctx context.Context,userID string, name string ) (*models.Business, error)
 	AddProduct(ctx context.Context,product *models.Product) error
+	ExistingCustomer(ctx context.Context, custId string) error
 }
 
 
@@ -52,7 +53,10 @@ func (r *repository) ExistingBusiness(ctx context.Context, userID string, name s
 func (r *repository) AddProduct(ctx context.Context,product *models.Product) error {
 	return r.db.WithContext(ctx).Create(product).Error
 }
-
+func (r *repository) ExistingCustomer(ctx context.Context, custId string) error {
+	var customer models.Customer
+	return r.db.WithContext(ctx).Where("id = ?", custId).First(&customer).Error
+}
 
 func (r *repository) AddCustomer(ctx context.Context,customer *models.Product) error {
 	return r.db.WithContext(ctx).Create(customer).Error
