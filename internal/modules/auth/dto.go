@@ -21,7 +21,7 @@ type LoginRequest struct {
 
 type UserResponse struct {
 	ID string `json:"id"`
-	Name string `json:name`
+	Name string `json:"name"`
 }
 type AuthData struct {
 	AccessToken string `json:"access_token"`
