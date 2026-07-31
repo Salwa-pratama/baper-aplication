@@ -1,3 +1,19 @@
-.env
-tmp/
+# Backend (Golang) folder ignores
+be/.env
+be/tmp/
+be/api
+be/*.exe
+be/*.exe~
+be/*.dll
+be/*.so
+be/*.dylib
+be/*.test
+be/*.out
+
+# Logs (Global)
 *.log
+
+# OS or Editor folders (Global)
+.DS_Store
+.vscode/
+.idea/

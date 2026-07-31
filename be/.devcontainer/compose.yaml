@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    image: be_baper
+    container_name: be_baper
+    command: sleep infinity
+    working_dir: /app
+    volumes:
+      - ../:/app:Z
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
