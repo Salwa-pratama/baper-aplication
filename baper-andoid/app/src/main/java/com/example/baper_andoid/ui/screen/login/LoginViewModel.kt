@@ -1,5 +1,6 @@
 package com.example.baper_andoid.ui.screen.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.baper_andoid.data.repository.AuthRepository
@@ -30,13 +31,30 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             _loginState.value = LoginState.Loading
             try {
                 val response = authRepository.login(email, password)
-                if (response.status && response.token != null) {
-                    _loginState.value = LoginState.Success(response.token)
+                Log.d("LoginViewModel", "Top Level Status: ${response.status}")
+                Log.d("LoginViewModel", "Nested Data Status: ${response.data?.status}")
+                Log.d("LoginViewModel", "Token exists: ${response.data?.data?.accesstoken != null}")
+
+                val nestedData = response.data
+                val authData = nestedData?.data
+
+                if (response.status == "success" && nestedData?.status == true && authData?.accesstoken != null) {
+                    _loginState.value = LoginState.Success(authData.accesstoken)
+                    Log.d("LoginViewModel", "Login Success! Token extracted.")
                 } else {
-                    _loginState.value = LoginState.Error(response.message)
+                    val errorMsg = when {
+                        response.status != "success" -> response.message
+                        nestedData?.status == false -> nestedData.message
+                        authData?.accesstoken == null -> "Token tidak ditemukan dalam payload data"
+                        else -> response.message
+                    }
+                    _loginState.value = LoginState.Error(errorMsg)
+                    Log.e("LoginViewModel", "Login Error: $errorMsg")
                 }
             } catch (e : Exception) {
-                _loginState.value = LoginState.Error(e.localizedMessage ?: "Terjadi kesalahan, Mohon tunggu beberapa saat")
+                val errorMsg = e.localizedMessage ?: "Terjadi kesalahan koneksi"
+                _loginState.value = LoginState.Error(errorMsg)
+                Log.e("LoginViewModel", "Exception: $errorMsg", e)
             }
         }
     }

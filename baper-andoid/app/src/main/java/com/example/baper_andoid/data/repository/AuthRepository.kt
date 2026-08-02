@@ -12,7 +12,7 @@ class AuthRepository(private val apiService: ApiService) {
         return apiService.login(LoginRequest(email, password))
     }
 
-    suspend fun register(name: String, email: String,phone : String,  password: String): RegisterResponse {
-        return apiService.register(RegisterRequest(name, email, phone, password))
+    suspend fun register(firstname: String,lastname : String,  email: String,phone : String,  password: String): RegisterResponse {
+        return apiService.register(RegisterRequest(firstname,lastname, email, phone, password))
     }
 }

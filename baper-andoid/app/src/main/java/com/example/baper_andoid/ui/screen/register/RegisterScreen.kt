@@ -12,7 +12,8 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var firstname by remember {mutableStateOf("")}
+    var lastname by remember {mutableStateOf("")}
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -25,7 +26,9 @@ fun RegisterScreen(
     ) {
         Text("Daftar Akun Baru", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nama Lengkap") })
+        OutlinedTextField(value = firstname, onValueChange = { firstname = it }, label = { Text("Nama Lengkap") })
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = lastname, onValueChange = { lastname = it }, label = { Text("Nama Lengkap") })
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
         Spacer(Modifier.height(8.dp))

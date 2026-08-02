@@ -1,34 +1,40 @@
-# Rencana Redesign Home Screen & Fitur Refresh
+# Rencana Perbaikan Parsing JSON Login (Double Nested)
 
-Gue setuju bro, tampilan "Cukur" kemarin emang gak nyambung sama konsep "Baper" (Bantu Pesan & Rekap). Kita bakal ubah total jadi Dashboard Bisnis yang profesional dan nambahin fitur **Pull-to-Refresh**.
+Berdasarkan log yang kamu kasih, JSON dari backend kamu itu punya struktur "Double Nested" (data di dalam data) dan tipe data `status` di level teratas adalah `String` ("success"), bukan `Boolean`. Itulah kenapa di Android kebaca `false` dan tokennya `null`.
 
-## User Review Required
-> [!IMPORTANT]
-> - Warna tema akan diubah dari Hijau WhatsApp ke **Brand Green (0xFF28A745)** agar sinkron dengan Splash & Onboarding.
-> - Data dummy "Toko Barbershop" akan diganti menjadi **"Statistik Pesanan"** dan **"Riwayat Rekap"**.
+## Analisa Masalah
+Struktur JSON asli dari backend kamu:
+```json
+{
+  "data": {
+    "status": true,
+    "message": "Login Successfully",
+    "data": { // Ini tempat access_token asli
+      "access_token": "...",
+      ...
+    }
+  },
+  "message": "Login successfully",
+  "status": "success"
+}
+```
+Sedangkan kodingan kita sekarang cuma ngarep satu level `data`.
 
-## Proposed Changes
+## Perubahan yang Diusulkan
 
-### Logic & Data
+### Data Transfer Object (DTO)
 
-#### [MODIFY] [HomeViewModel.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeViewModel.kt)
-- Menambahkan state untuk `isRefreshing` dan data bisnis (Total Omzet, Jumlah Pesanan).
-- Implementasi fungsi `refreshData()` dengan simulasi delay.
+#### [MODIFY] [LoginResponse.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/dto/response/LoginResponse.kt)
+- Membuat class `LoginNestedData` untuk menangani pembungkus level pertama.
+- Mengubah `status` di level teratas menjadi `String`.
+- Menyesuaikan hirarki agar `AuthData` diambil dari `data.data`.
 
-#### [NEW] [HomeViewModelFactory.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeViewModelFactory.kt)
-- Membuat factory agar `HomeViewModel` bisa di-inject ke UI.
+### Business Logic
 
-### UI Screens
+#### [MODIFY] [LoginViewModel.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginViewModel.kt)
+- Mengubah logika pengecekan sukses: `response.status == "success"` dan `response.data?.status == true`.
+- Mengambil token dari `response.data?.data?.accesstoken`.
 
-#### [MODIFY] [HomeScreen.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeScreen.kt)
-- Mengganti layout "Cukur" menjadi Dashboard.
-- Implementasi `PullToRefreshBox` (Material 3) untuk fitur refresh halaman.
-- Membuat widget **Stat Card** untuk ringkasan Pesanan & Rekap.
-- Mengubah list menjadi **"Transaksi Terbaru"**.
-
-## Verification Plan
-
-### Manual Verification
-- Buka Home Screen, pastikan warna sudah hijau profesional.
-- Tarik layar ke bawah (swipe down) untuk memastikan fitur **Refresh** muncul dan data terupdate.
-- Pastikan teks sapaan dan data sudah relevan dengan "Pesan & Rekap".
+## Verifikasi Plan
+- Melakukan build project.
+- Mengecek Logcat untuk memastikan `Response Status` sekarang terbaca `success` dan token tidak lagi `null`.

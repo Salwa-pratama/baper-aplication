@@ -9,7 +9,7 @@ type RegisterRequest struct {
 }
 
 type RegisterResponse struct {
-	Status string `json:"status"`
+	Status bool `json:"status"`
 	Message string `json:"message"`
 }
 
@@ -31,7 +31,7 @@ type AuthData struct {
 
 
 type AuthResponse struct {
-	Status string `json:"status"`
+	Status bool `json:"status"`
 	Message string `json:"message"`
 	Data AuthData `json:"data"`
 }

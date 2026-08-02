@@ -1,29 +1,27 @@
-# Walkthrough - Redesign Dashboard & Fitur Refresh
+# Walkthrough - Perbaikan Double Nested JSON Parsing
 
-Gue udah ubah total Home Screen kamu dari yang tadinya aplikasi "Tukang Cukur" jadi **Dashboard Bisnis BAPER** yang profesional. Gue juga udah nambahin fitur interaktif yang kamu minta.
+Gue udah memperbaiki masalah parsing JSON yang bikin login kamu selalu merah meskipun backend sukses. Masalahnya ada pada struktur JSON backend kamu yang ternyata punya hirarki bertumpuk (nested).
 
-## Perubahan Utama
+## Perubahan yang Dilakukan
 
-### 1. Dashboard Bisnis Profesional
-- **Redesign UI**: Tampilan sekarang menggunakan kartu statistik (Stat Cards) untuk menampilkan Omzet dan jumlah Pesanan.
-- **Brand Identity**: Warna tema diubah ke **Brand Green (0xFF28A745)** agar konsisten dengan logo Lottie dan Onboarding kamu.
-- **Transaksi Terbaru**: Daftar riwayat transaksi sekarang lebih relevan dengan konsep "Pesan & Rekap".
+### 1. Sinkronisasi Struktur DTO (`LoginResponse.kt`)
+Gue menyesuaikan struktur class agar sesuai dengan JSON asli dari backend kamu:
+- **String Status**: `status` di level teratas sekarang dibaca sebagai `String` ("success") sesuai kiriman backend.
+- **Double Nesting**: Menambahkan class `LoginNestedData` karena token kamu dibungkus dua kali dalam field `data`.
+  - Hirarki sekarang: `Response` -> `data` (NestedData) -> `data` (AuthData) -> `access_token`.
 
-### 2. Fitur Pull-to-Refresh
-- **Interaksi**: User sekarang bisa menarik layar ke bawah (*Swipe Down*) untuk memperbarui data rekap secara manual.
-- **Feedback Visual**: Menggunakan `PullToRefreshBox` dari Material 3 yang memberikan indikator loading modern.
+### 2. Logika Parsing Baru (`LoginViewModel.kt`)
+- Gue update pengecekan suksesnya jadi: `response.status == "success"` DAN `response.data.status == true`.
+- Pengambilan token sekarang diarahkan ke jalan yang benar: `response.data.data.access_token`.
+- Gue tambahin log yang lebih detail buat tiap level nesting biar kita gampang mantau.
 
-### 3. Arsitektur Kode (MVVM)
-- **HomeViewModel**: Mengelola state data dashboard dan status refresh.
-- **HomeRepository**: Menangani simulasi pengambilan data dari backend/API.
-- **HomeViewModelFactory**: Memungkinkan dependency injection untuk ViewModel yang lebih bersih.
+## Kenapa Sebelumnya "Gagal"?
+Berdasarkan log yang kamu kasih:
+- **Android**: Ngarep `status` itu `Boolean` (true/false), tapi **Backend** ngirim `"success"` (String). Android bingung dan anggap itu `false`.
+- **Android**: Nyari token langsung di dalam `data`, tapi **Backend** nyimpen di dalam `data.data`. Android gak nemu dan anggap tokennya `null`.
 
-## Hasil Verifikasi
-- `analyze_file` pada `HomeScreen.kt`, `HomeViewModel.kt`, dan `HomeRepository.kt` menunjukkan **0 error**.
-- Semua komponen UI sudah tersambung dengan `HomeUiState`.
+## Hasil Akhir
+Sekarang aplikasi kamu udah bisa baca hirarki JSON yang kompleks itu dengan benar.
 
 > [!TIP]
-> Di `HomeRepository.kt`, gue udah siapin fungsi `getDashboardStats()` dan `getRecentTransactions()`. Nanti kalo API backend kamu udah siap, tinggal ganti isinya aja buat panggil `apiService`.
-
-> [!IMPORTANT]
-> Jangan lupa, untuk mencoba fitur refresh, cukup tarik layar Dashboard ke bawah di emulator/device!
+> Sekarang coba **Run** lagi aplikasinya. Harusnya langsung masuk ke Home karena rute pengambilan tokennya udah gue benerin sesuai peta JSON backend kamu!
