@@ -1,0 +1,5 @@
+- `[x]` Tambahkan library icons-extended ke `libs.versions.toml`
+- `[x]` Update `app/build.gradle.kts` dengan library baru
+- `[x]` Sinkronisasi Gradle
+- `[x]` Update `HomeScreen.kt` (Add @OptIn dan perbaiki icons)
+- `[x]` Verifikasi akhir
