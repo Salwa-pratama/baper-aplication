@@ -1,40 +1,22 @@
-# Rencana Perbaikan Parsing JSON Login (Double Nested)
+# Rencana Sinkronisasi Login dengan Backend (Versi Terbaru)
 
-Berdasarkan log yang kamu kasih, JSON dari backend kamu itu punya struktur "Double Nested" (data di dalam data) dan tipe data `status` di level teratas adalah `String` ("success"), bukan `Boolean`. Itulah kenapa di Android kebaca `false` dan tokennya `null`.
-
-## Analisa Masalah
-Struktur JSON asli dari backend kamu:
-```json
-{
-  "data": {
-    "status": true,
-    "message": "Login Successfully",
-    "data": { // Ini tempat access_token asli
-      "access_token": "...",
-      ...
-    }
-  },
-  "message": "Login successfully",
-  "status": "success"
-}
-```
-Sedangkan kodingan kita sekarang cuma ngarep satu level `data`.
+Berdasarkan struct Go dan JSON terbaru yang kamu kasih, struktur responsnya sekarang lebih simpel (satu level `data`) dan `status` sudah kembali menjadi `Boolean`. Saya akan menyesuaikan kodingan Android agar sinkron dengan perubahan ini.
 
 ## Perubahan yang Diusulkan
 
 ### Data Transfer Object (DTO)
 
 #### [MODIFY] [LoginResponse.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/dto/response/LoginResponse.kt)
-- Membuat class `LoginNestedData` untuk menangani pembungkus level pertama.
-- Mengubah `status` di level teratas menjadi `String`.
-- Menyesuaikan hirarki agar `AuthData` diambil dari `data.data`.
+- Mengubah `status` dari `String` menjadi `Boolean` sesuai dengan `AuthResponse` di backend.
+- Memastikan `data` langsung merujuk ke `AuthData?`.
 
 ### Business Logic
 
 #### [MODIFY] [LoginViewModel.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginViewModel.kt)
-- Mengubah logika pengecekan sukses: `response.status == "success"` dan `response.data?.status == true`.
-- Mengambil token dari `response.data?.data?.accesstoken`.
+- Membersihkan variabel sisa (`nestedData`) yang sudah tidak digunakan.
+- Memperbaiki logika pengecekan `if (response.status)` menggunakan tipe `Boolean`.
+- Menyederhanakan logging agar sesuai dengan struktur data yang baru.
 
-## Verifikasi Plan
-- Melakukan build project.
-- Mengecek Logcat untuk memastikan `Response Status` sekarang terbaca `success` dan token tidak lagi `null`.
+## Langkah Verifikasi
+1.  Build project untuk memastikan tidak ada error kompilasi pada tipe data `Boolean`.
+2.  Test login dan cek Logcat untuk memastikan token berhasil diekstrak dari `response.data.access_token`.

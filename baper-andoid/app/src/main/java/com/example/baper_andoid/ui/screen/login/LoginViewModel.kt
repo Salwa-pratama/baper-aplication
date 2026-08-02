@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.baper_andoid.data.repository.AuthRepository
-import com.example.baper_andoid.navigation.Screen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,22 +30,19 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             _loginState.value = LoginState.Loading
             try {
                 val response = authRepository.login(email, password)
-                Log.d("LoginViewModel", "Top Level Status: ${response.status}")
-                Log.d("LoginViewModel", "Nested Data Status: ${response.data?.status}")
-                Log.d("LoginViewModel", "Token exists: ${response.data?.data?.accesstoken != null}")
+                Log.d("LoginViewModel", "Response Status: ${response.status}")
+                Log.d("LoginViewModel", "Response Message: ${response.message}")
+                
+                val authData = response.data
 
-                val nestedData = response.data
-                val authData = nestedData?.data
-
-                if (response.status == "success" && nestedData?.status == true && authData?.accesstoken != null) {
+                if (response.status && authData?.accesstoken != null) {
                     _loginState.value = LoginState.Success(authData.accesstoken)
-                    Log.d("LoginViewModel", "Login Success! Token extracted.")
+                    Log.d("LoginViewModel", "Login Success! Token: ${authData.accesstoken}")
                 } else {
-                    val errorMsg = when {
-                        response.status != "success" -> response.message
-                        nestedData?.status == false -> nestedData.message
-                        authData?.accesstoken == null -> "Token tidak ditemukan dalam payload data"
-                        else -> response.message
+                    val errorMsg = if (response.status) {
+                        "Token tidak ditemukan dalam data respon"
+                    } else {
+                        response.message
                     }
                     _loginState.value = LoginState.Error(errorMsg)
                     Log.e("LoginViewModel", "Login Error: $errorMsg")

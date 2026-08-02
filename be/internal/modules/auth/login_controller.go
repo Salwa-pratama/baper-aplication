@@ -35,9 +35,5 @@ func (c *LoginController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.JSON(fiber.Map{
-		"status": "success",
-		"message" : "Login successfully",
-		"data" : response,
-	})
+	return ctx.JSON(response)
 }

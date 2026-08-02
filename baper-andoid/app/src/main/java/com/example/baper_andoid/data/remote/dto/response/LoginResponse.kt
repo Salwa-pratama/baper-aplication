@@ -18,20 +18,13 @@ data class AuthData(
     val user: User?
 )
 
-data class LoginNestedData(
+
+
+data class LoginResponse(
     @SerializedName("status")
     val status: Boolean,
     @SerializedName("message")
     val message: String,
     @SerializedName("data")
     val data: AuthData?
-)
-
-data class LoginResponse(
-    @SerializedName("status")
-    val status: String,
-    @SerializedName("message")
-    val message: String,
-    @SerializedName("data")
-    val data: LoginNestedData?
 )
