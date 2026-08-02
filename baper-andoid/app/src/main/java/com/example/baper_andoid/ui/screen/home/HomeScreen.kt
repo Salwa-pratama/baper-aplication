@@ -7,141 +7,175 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.baper_andoid.data.remote.RetrofitClient
+import com.example.baper_andoid.data.repository.HomeRepository
 
-// Warna tema WhatsApp
-private val WaGreenDark = Color(0xFF128C7E)
-private val WaGreen = Color(0xFF25D366)
-private val WaGreenLight = Color(0xFFDCF8C6)
-private val WaBackground = Color(0xFFF7F7F7)
+private val BrandGreen = Color(0xFF28A745)
+private val BrandGreenDark = Color(0xFF1E7E34)
+private val BrandGreenLight = Color(0xFFD4EDDA)
+private val BgGray = Color(0xFFF8F9FA)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit
 ) {
-    val dummyStores = listOf(
-        "Barber Jaya" to "Antrian: 3",
-        "Cukur Kece" to "Antrian: 0",
-        "Modern Barbershop" to "Tutup"
-    )
+    val repository = remember { HomeRepository(RetrofitClient.instance) }
+    val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(repository))
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containerColor = WaBackground,
+        containerColor = BgGray,
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    Text("Beranda", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("BAPER Dashboard", fontWeight = FontWeight.ExtraBold, color = Color.White)
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: notifikasi */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifikasi", tint = Color.White)
-                    }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = WaGreenDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandGreen)
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refreshData() },
+            modifier = Modifier.padding(padding)
         ) {
-            // Header sapaan
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(WaGreen)
-                    .padding(20.dp)
-            ) {
-                Text(
-                    text = "Halo, Ananda 👋",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Mau cukur di mana hari ini?",
-                    color = WaGreenLight,
-                    fontSize = 14.sp
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Search bar sederhana (visual only dulu)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-                Spacer(Modifier.width(8.dp))
-                Text("Cari toko barbershop...", color = Color.Gray, fontSize = 14.sp)
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Text(
-                text = "Toko Terdekat",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // List toko (dummy dulu, nanti diganti data dari ViewModel/API)
             LazyColumn(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(dummyStores) { (name, status) ->
+                item {
+                    Text(
+                        text = "Halo, Pengusaha Sukses! 👋",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Berikut ringkasan bisnis Anda hari ini.",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White)
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(WaGreenLight),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Storefront, contentDescription = null, tint = WaGreenDark)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                            Text(status, color = Color.Gray, fontSize = 13.sp)
-                        }
+                        StatCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Omzet Hari Ini",
+                            value = uiState.stats["omzet"] ?: "Rp 0",
+                            icon = Icons.Default.MonetizationOn,
+                            color = BrandGreen
+                        )
+                        StatCard(
+                            modifier = Modifier.weight(1f),
+                            title = "Pesanan Baru",
+                            value = uiState.stats["pesanan"] ?: "0",
+                            icon = Icons.Default.ShoppingCart,
+                            color = Color(0xFF007BFF)
+                        )
                     }
                 }
+
+                item {
+                    Text(
+                        text = "Transaksi Terbaru",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+
+                items(uiState.transactions) { transaction ->
+                    TransactionItem(transaction = transaction)
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun StatCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    value: String,
+    icon: ImageVector,
+    color: Color
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(title, fontSize = 12.sp, color = Color.Gray)
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+        }
+    }
+}
+
+@Composable
+fun TransactionItem(transaction: com.example.baper_andoid.data.repository.Transaction) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(BrandGreenLight),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = BrandGreenDark)
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(transaction.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("ID: ${transaction.id}", fontSize = 12.sp, color = Color.Gray)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(transaction.amount, fontWeight = FontWeight.Bold, color = BrandGreen)
+            Text(
+                text = transaction.status,
+                fontSize = 11.sp,
+                color = if (transaction.status == "Sukses") BrandGreen else Color.Red,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

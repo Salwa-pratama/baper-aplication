@@ -1,28 +1,34 @@
-# Rencana Perbaikan HomeScreen Errors
+# Rencana Redesign Home Screen & Fitur Refresh
 
-Saya telah menemukan penyebab error di `HomeScreen.kt`. Masalah utamanya adalah:
-1.  **Missing Dependency**: Icon-icon seperti `Notifications`, `ExitToApp`, dan `Storefront` memerlukan library `material-icons-extended` yang belum ada di project.
-2.  **Experimental API**: Penggunaan `TopAppBar` di Material 3 memerlukan anotasi `@OptIn`.
+Gue setuju bro, tampilan "Cukur" kemarin emang gak nyambung sama konsep "Baper" (Bantu Pesan & Rekap). Kita bakal ubah total jadi Dashboard Bisnis yang profesional dan nambahin fitur **Pull-to-Refresh**.
+
+## User Review Required
+> [!IMPORTANT]
+> - Warna tema akan diubah dari Hijau WhatsApp ke **Brand Green (0xFF28A745)** agar sinkron dengan Splash & Onboarding.
+> - Data dummy "Toko Barbershop" akan diganti menjadi **"Statistik Pesanan"** dan **"Riwayat Rekap"**.
 
 ## Proposed Changes
 
-### Build Configuration
+### Logic & Data
 
-#### [MODIFY] [libs.versions.toml](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/gradle/libs.versions.toml)
-- Tambahkan library `androidx-compose-material-icons-extended`.
+#### [MODIFY] [HomeViewModel.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeViewModel.kt)
+- Menambahkan state untuk `isRefreshing` dan data bisnis (Total Omzet, Jumlah Pesanan).
+- Implementasi fungsi `refreshData()` dengan simulasi delay.
 
-#### [MODIFY] [app/build.gradle.kts](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/build.gradle.kts)
-- Tambahkan dependensi `libs.androidx.compose.material.icons.extended`.
+#### [NEW] [HomeViewModelFactory.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeViewModelFactory.kt)
+- Membuat factory agar `HomeViewModel` bisa di-inject ke UI.
 
-### Source Code
+### UI Screens
 
 #### [MODIFY] [HomeScreen.kt](file:///media/pratama/Data1/FTI/baper/backend/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeScreen.kt)
-- Tambahkan `@OptIn(ExperimentalMaterial3Api::class)` di atas fungsi `HomeScreen`.
-- Pastikan import untuk `Icons` dan material component sudah benar.
+- Mengganti layout "Cukur" menjadi Dashboard.
+- Implementasi `PullToRefreshBox` (Material 3) untuk fitur refresh halaman.
+- Membuat widget **Stat Card** untuk ringkasan Pesanan & Rekap.
+- Mengubah list menjadi **"Transaksi Terbaru"**.
 
 ## Verification Plan
 
-### Automated Tests
-- Sinkronisasi Gradle.
-- Jalankan `analyze_file` pada `HomeScreen.kt` untuk memastikan error hilang.
-- Build project dengan `./gradlew assembleDebug`.
+### Manual Verification
+- Buka Home Screen, pastikan warna sudah hijau profesional.
+- Tarik layar ke bawah (swipe down) untuk memastikan fitur **Refresh** muncul dan data terupdate.
+- Pastikan teks sapaan dan data sudah relevan dengan "Pesan & Rekap".
