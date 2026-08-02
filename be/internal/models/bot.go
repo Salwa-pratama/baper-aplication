@@ -8,9 +8,6 @@ type Bot struct {
 	BusinessID          string    `gorm:"type:varchar(36);not null"`
 	Name                string    `gorm:"type:varchar(100);not null"`
 	WaStatus            string    `gorm:"type:varchar(50)"`
-	LangflowFlowID      string    `gorm:"type:varchar(100)"`
-	LangflowAPIEndpoint string    `gorm:"type:varchar(255)"`
-	LangflowAPIKey      string    `gorm:"type:varchar(255)"`
 	AgentPrompt         string    `gorm:"type:text"`
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
