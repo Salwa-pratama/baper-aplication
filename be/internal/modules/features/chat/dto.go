@@ -76,3 +76,9 @@ type CustomerRequest struct {
 }
 
 
+type SendMessage struct {
+	To string `json:"to"`
+	Msg string `json:"msg"`
+}
+
+

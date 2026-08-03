@@ -29,4 +29,5 @@ func InitRoutes(router fiber.Router, db *gorm.DB) {
 	chat := router.Group("/webhook")
 	chat.Get("/", Ctrl.CekVerification)
 	chat.Post("/verify", Ctrl.ReceiveMessage)
+	chat.Post("/send-message", Ctrl.SendMessage)
 }

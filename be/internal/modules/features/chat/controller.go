@@ -1,6 +1,10 @@
 package chat
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"baper/internal/common/res"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 type ChatController struct {
 	service Service
@@ -42,4 +46,19 @@ func (c *ChatController) ReceiveMessage(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *ChatController) SendMessage(ctx *fiber.Ctx) error {
+	var payload SendMessage
+	if err := ctx.BodyParser(&payload); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error("Invalid Request"))
+	}
+
+	err := c.service.SendMessage(payload.To, payload.Msg)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusForbidden).JSON(res.Error("Gagal mengirim pesan"))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(res.Success("Pesan Anda terkirim",nil))
 }
