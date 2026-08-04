@@ -16,7 +16,18 @@ func NewBusinessController(service Service) *BusinessController {
 	return &BusinessController{service}
 }
 
-
+// RegisterBusiness godoc
+// @Summary Register a Business
+// @Description Register a new business for the authenticated user
+// @Tags Business
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body RegisterBusinessRequest true "Business Data"
+// @Success 200 {object} res.Response
+// @Failure 400 {object} res.Response
+// @Failure 401 {object} res.Response
+// @Router /api/business/register [post]
 func (c *BusinessController) RegisterBusiness(ctx *fiber.Ctx) error {
 	var req RegisterBusinessRequest
 	if err := ctx.BodyParser(&req); err != nil {

@@ -13,6 +13,14 @@ import (
 
 var App *fiber.App
 
+// @title Baper API
+// @version 1.0
+// @description Backend API for Baper Application
+// @host localhost:3000
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	fiberConfig := fiber.Config{
 		AppName: "BAPER API",

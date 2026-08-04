@@ -1,0 +1,624 @@
+basePath: /
+definitions:
+  baper_internal_common_res.Response:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: boolean
+    type: object
+  internal_modules_auth.AuthData:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/internal_modules_auth.UserResponse'
+    type: object
+  internal_modules_auth.AuthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.AuthData'
+      message:
+        type: string
+      status:
+        type: boolean
+    type: object
+  internal_modules_auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_modules_auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - phone
+    type: object
+  internal_modules_auth.UserResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  internal_modules_features_busines.RegisterBusinessRequest:
+    properties:
+      address:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      phone_business:
+        type: string
+    required:
+    - address
+    - name
+    - phone_business
+    type: object
+  internal_modules_features_chat.Change:
+    properties:
+      field:
+        type: string
+      value:
+        $ref: '#/definitions/internal_modules_features_chat.ChangeValue'
+    type: object
+  internal_modules_features_chat.ChangeValue:
+    properties:
+      contacts:
+        items:
+          $ref: '#/definitions/internal_modules_features_chat.Contact'
+        type: array
+      messages:
+        items:
+          $ref: '#/definitions/internal_modules_features_chat.Message'
+        type: array
+      messaging_product:
+        type: string
+      metadata:
+        $ref: '#/definitions/internal_modules_features_chat.Metadata'
+    type: object
+  internal_modules_features_chat.Contact:
+    properties:
+      profile:
+        $ref: '#/definitions/internal_modules_features_chat.Profile'
+      wa_id:
+        type: string
+    type: object
+  internal_modules_features_chat.Entry:
+    properties:
+      changes:
+        items:
+          $ref: '#/definitions/internal_modules_features_chat.Change'
+        type: array
+      id:
+        type: string
+    type: object
+  internal_modules_features_chat.Message:
+    properties:
+      from:
+        type: string
+      id:
+        type: string
+      text:
+        $ref: '#/definitions/internal_modules_features_chat.MessageText'
+      timestamp:
+        type: string
+      type:
+        type: string
+    type: object
+  internal_modules_features_chat.MessageText:
+    properties:
+      body:
+        type: string
+    type: object
+  internal_modules_features_chat.Metadata:
+    properties:
+      display_phone_number:
+        type: string
+      phone_number_id:
+        type: string
+    type: object
+  internal_modules_features_chat.Profile:
+    properties:
+      name:
+        type: string
+    type: object
+  internal_modules_features_chat.SendMediaMessage:
+    properties:
+      caption:
+        type: string
+      media_url:
+        type: string
+      to:
+        type: string
+      type:
+        description: image, document, video, audio
+        type: string
+    required:
+    - to
+    - type
+    type: object
+  internal_modules_features_chat.SendMessage:
+    properties:
+      msg:
+        type: string
+      to:
+        type: string
+    type: object
+  internal_modules_features_chat.WebhookPayload:
+    properties:
+      entry:
+        items:
+          $ref: '#/definitions/internal_modules_features_chat.Entry'
+        type: array
+      object:
+        type: string
+    type: object
+  internal_modules_features_products.CreateProductRequest:
+    properties:
+      business_id:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      stock:
+        type: integer
+    required:
+    - business_id
+    - name
+    - price
+    type: object
+  internal_modules_features_products.UpdateProductRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      stock:
+        type: integer
+    required:
+    - name
+    - price
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: Backend API for Baper Application
+  title: Baper API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return JWT tokens
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_modules_auth.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login User
+      tags:
+      - Auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user into the system
+      parameters:
+      - description: Registration Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register New User
+      tags:
+      - Auth
+  /api/business/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new business for the authenticated user
+      parameters:
+      - description: Business Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_busines.RegisterBusinessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      security:
+      - BearerAuth: []
+      summary: Register a Business
+      tags:
+      - Business
+  /api/products:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all products, optionally filtered by business ID
+      parameters:
+      - description: Business ID
+        in: query
+        name: business_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Get All Products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product for a business
+      parameters:
+      - description: Product Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_products.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Create a Product
+      tags:
+      - Products
+  /api/products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a product by its ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Delete Product
+      tags:
+      - Products
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Get Product by ID
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update an existing product's details
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_products.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Update Product
+      tags:
+      - Products
+  /api/webhook/:
+    get:
+      consumes:
+      - application/json
+      description: Verify webhook endpoint for Meta WhatsApp API
+      parameters:
+      - description: Mode
+        in: query
+        name: hub.mode
+        required: true
+        type: string
+      - description: Challenge
+        in: query
+        name: hub.challenge
+        required: true
+        type: string
+      - description: Verify Token
+        in: query
+        name: hub.verify_token
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: challenge
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Webhook Verification
+      tags:
+      - Webhook
+  /api/webhook/send-media:
+    post:
+      consumes:
+      - application/json
+      description: Send a media message (image/document/video/audio) using a public
+        URL
+      parameters:
+      - description: Media Message Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_chat.SendMediaMessage'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Send Media via URL
+      tags:
+      - Webhook
+  /api/webhook/send-message:
+    post:
+      consumes:
+      - application/json
+      description: Send a text message via WhatsApp
+      parameters:
+      - description: Message Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_chat.SendMessage'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Send Text Message
+      tags:
+      - Webhook
+  /api/webhook/upload-media:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a local file and send it as a media message
+      parameters:
+      - description: Destination Phone Number (e.g. 62812...)
+        in: formData
+        name: to
+        required: true
+        type: string
+      - description: Media Type (image, document, video, audio)
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Optional Caption
+        in: formData
+        name: caption
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Send Media via File Upload
+      tags:
+      - Webhook
+  /api/webhook/verify:
+    post:
+      consumes:
+      - application/json
+      description: Receive incoming messages from Meta WhatsApp API
+      parameters:
+      - description: Webhook Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_features_chat.WebhookPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/baper_internal_common_res.Response'
+      summary: Receive Webhook
+      tags:
+      - Webhook
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

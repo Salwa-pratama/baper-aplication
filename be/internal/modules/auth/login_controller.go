@@ -10,6 +10,17 @@ func NewLoginController(service Service) *LoginController {
 	return &LoginController{service}
 }
 
+// Login godoc
+// @Summary Login User
+// @Description Authenticate a user and return JWT tokens
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login Credentials"
+// @Success 200 {object} AuthResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /api/auth/login [post]
 func (c *LoginController) Login(ctx *fiber.Ctx) error {
 	var req LoginRequest
 

@@ -10,6 +10,16 @@ func NewRegisterController(service Service) *RegisterController {
 	return &RegisterController{service}
 }
 
+// Register godoc
+// @Summary Register New User
+// @Description Register a new user into the system
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration Data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /api/auth/register [post]
 func (c *RegisterController) Register(ctx *fiber.Ctx) error {
 	var req RegisterRequest
 
