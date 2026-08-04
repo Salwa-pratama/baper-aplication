@@ -2,6 +2,9 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Customer Model
@@ -19,4 +22,10 @@ type Customer struct {
 	Orders       []Order       `gorm:"foreignKey:CustomerID"`
 }
 
-
+// Hook ini otomatis kepanggil GORM sebelum proses INSERT
+func (c *Customer) BeforeCreate(tx *gorm.DB) error {
+	if c.ID == "" {
+		c.ID = uuid.New().String()
+	}
+	return nil
+}

@@ -52,7 +52,7 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 	}
 
 	return  RegisterResponse{
-		Status: "ok",
+		Status: true,
 		Message: "Register successfully",
 	}, nil
 }
@@ -84,7 +84,7 @@ func (s *service) SignIn(req LoginRequest) (AuthResponse, error) {
 
 
 	return AuthResponse{
-		Status : "ok",
+		Status : true,
 		Message: "Login Successfully",
 		Data : AuthData{
 			AccessToken: token,

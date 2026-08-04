@@ -76,3 +76,36 @@ type CustomerRequest struct {
 }
 
 
+type SendMessage struct {
+	To string `json:"to"`
+	Msg string `json:"msg"`
+}
+
+type SendMediaMessage struct {
+	To        string `json:"to" validate:"required"`
+	MediaURL  string `json:"media_url" validate:"omitempty"`
+	MediaType string `json:"type" validate:"required"` // image, document, video, audio
+	Caption   string `json:"caption" validate:"omitempty"`
+}
+
+type MediaBlock struct {
+	ID      string `json:"id,omitempty"`
+	Link    string `json:"link,omitempty"`
+	Caption string `json:"caption,omitempty"`
+	// Note: Audio and some other types might not support caption. 
+	// Meta will ignore it or throw an error depending on the type, but we include it here.
+}
+
+type WhatsAppMediaPayload struct {
+	MessagingProduct string      `json:"messaging_product"`
+	To               string      `json:"to"`
+	Type             string      `json:"type"`
+	Image            *MediaBlock `json:"image,omitempty"`
+	Document         *MediaBlock `json:"document,omitempty"`
+	Video            *MediaBlock `json:"video,omitempty"`
+	Audio            *MediaBlock `json:"audio,omitempty"`
+}
+
+type UploadMediaResponse struct {
+	ID string `json:"id"`
+}
