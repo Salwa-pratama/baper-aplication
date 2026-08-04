@@ -30,4 +30,6 @@ func InitRoutes(router fiber.Router, db *gorm.DB) {
 	chat.Get("/", Ctrl.CekVerification)
 	chat.Post("/verify", Ctrl.ReceiveMessage)
 	chat.Post("/send-message", Ctrl.SendMessage)
+	chat.Post("/send-media", Ctrl.SendMediaMessage)
+	chat.Post("/upload-media", Ctrl.SendMediaFile)
 }
