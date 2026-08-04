@@ -1,4 +1,4 @@
-package com.mobileandroid.myapplication
+package com.example.baper_andoid
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.*
-import com.mobileandroid.myapplication.ui.theme.MyApplicationTheme
+import com.example.baper_andoid.ui.theme.BaperandoidTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            BaperandoidTheme {
                 val currentScreen = remember { mutableStateOf("splash") }
 
                 // Pre-load Lottie di tingkat teratas agar dimulai secepat mungkin
