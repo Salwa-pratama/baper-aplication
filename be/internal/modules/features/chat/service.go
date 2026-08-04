@@ -4,11 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
+	"path/filepath"
 	"time"
 
 	"baper/internal/common/apperror"
@@ -20,7 +24,7 @@ type Service interface {
 	ReceiveMessage(req WebhookPayload) (Response, error)
 	SendMessage(to string, text string) error
 	SendMediaMessage(to, mediaURL, mediaType, caption string) error
-	UploadMedia(file multipart.File, filename string) (string, error)
+	UploadMedia(file multipart.File, filename string, contentType string) (string, error)
 	SendMediaByID(to, mediaID, mediaType, caption string) error
 }
 
@@ -95,8 +99,8 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 	contact := change.Value.Contacts[0]
 
 	log.Printf("Pesan dari : %s", msg.From)
-	log.Printf("Isi pesan : %s",msg.Text.Body)
-	log.Printf("Nama Customer : %s",contact.Profile.Name)
+	log.Printf("Isi pesan : %s", msg.Text.Body)
+	log.Printf("Nama Customer : %s", contact.Profile.Name)
 
 	// 1. Dapatkan Bot dari PhoneNumberID (Nomor WhatsApp Business)
 	bot, err := s.repo.FindBotByBusinessPhone(phone.PhoneNumberID)
@@ -276,7 +280,7 @@ func (s *service) SendMediaMessage(to, mediaURL, mediaType, caption string) erro
 	return s.sendWhatsAppPayload(payload, phoneID, accessToken)
 }
 
-func (s *service) UploadMedia(file multipart.File, filename string) (string, error) {
+func (s *service) UploadMedia(file multipart.File, filename string, contentType string) (string, error) {
 	phoneID := os.Getenv("PHONE_NUMBER_ID")
 	accessToken := os.Getenv("ACCESS_TOKEN")
 
@@ -286,12 +290,24 @@ func (s *service) UploadMedia(file multipart.File, filename string) (string, err
 
 	url := os.Getenv("ENDPOINT_SEND_MESSAGE") + phoneID + "/media"
 
+	if contentType == "" || contentType == "application/octet-stream" {
+		contentType = mime.TypeByExtension(filepath.Ext(filename))
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+	}
+	log.Println("Uploading file:", filename, "dengan Content-Type:", contentType)
+
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
 
 	_ = w.WriteField("messaging_product", "whatsapp")
 
-	fw, err := w.CreateFormFile("file", filename)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename))
+	h.Set("Content-Type", contentType)
+
+	fw, err := w.CreatePart(h)
 	if err != nil {
 		return "", apperror.Internal("Gagal membuat form file")
 	}

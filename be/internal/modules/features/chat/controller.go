@@ -95,6 +95,7 @@ func (c *ChatController) SendMediaFile(ctx *fiber.Ctx) error {
 	if err != nil {
 		return res.HandleError(ctx, apperror.BadRequest("File tidak ditemukan dalam request"))
 	}
+	contentType := fileHeader.Header.Get("Content-Type")
 
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -102,7 +103,7 @@ func (c *ChatController) SendMediaFile(ctx *fiber.Ctx) error {
 	}
 	defer file.Close()
 
-	mediaID, err := c.service.UploadMedia(file, fileHeader.Filename)
+	mediaID, err := c.service.UploadMedia(file, fileHeader.Filename, contentType)
 	if err != nil {
 		return res.HandleError(ctx, err)
 	}
