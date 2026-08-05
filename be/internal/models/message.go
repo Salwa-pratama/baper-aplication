@@ -9,14 +9,14 @@ import (
 
 // Message Model
 type Message struct {
-	ID         string    `gorm:"type:varchar(36);primaryKey"`
-	SessionID  string    `gorm:"type:varchar(36);not null"`
-	SenderType string    `gorm:"type:varchar(50);not null"`
-	Content    string    `gorm:"type:text;not null"`
-	Metadata   string    `gorm:"type:json"`
-	CreatedAt  time.Time
+	ID         string    `gorm:"type:varchar(36);primaryKey" json:"id"`
+	SessionID  string    `gorm:"type:varchar(36);not null" json:"session_id"`
+	SenderType string    `gorm:"type:varchar(50);not null" json:"sender_type"`
+	Content    string    `gorm:"type:text;not null" json:"content"`
+	Metadata   string    `gorm:"type:json" json:"metadata"`
+	CreatedAt  time.Time `json:"created_at"`
 
-	ChatSession ChatSession `gorm:"foreignKey:SessionID"`
+	ChatSession ChatSession `gorm:"foreignKey:SessionID" json:"chat_session"`
 }
 
 // Hook ini otomatis kepanggil GORM sebelum proses INSERT
@@ -30,4 +30,3 @@ func (m *Message) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-

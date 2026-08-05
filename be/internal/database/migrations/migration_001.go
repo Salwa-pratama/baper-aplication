@@ -16,7 +16,6 @@ func Migration001(db *gorm.DB) (string, error) {
 		&models.AuthToken{},
 		&models.Business{},
 		&models.Bot{},
-		&models.BotDocument{},
 		&models.Customer{},
 		&models.Product{},
 		&models.ChatSession{},
@@ -25,6 +24,5 @@ func Migration001(db *gorm.DB) (string, error) {
 		&models.OrderRecapDraft{},
 		&models.OrderItem{},
 	)
-
 	return migration_id, err
 }

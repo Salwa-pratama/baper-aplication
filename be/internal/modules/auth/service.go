@@ -43,7 +43,6 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 		PasswordHash: string(hashedPassword),
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
-		Phone:        req.Phone,
 	}
 
 	// 4. Simpan ke database

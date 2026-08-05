@@ -10,22 +10,20 @@ import (
 
 // Business Model
 type Business struct {
-	ID            string    `gorm:"type:varchar(36);primaryKey"`
-	UserID        string    `gorm:"type:varchar(36);not null"`
-	Name          string    `gorm:"type:varchar(100);not null"`
-	Description   string    `gorm:"type:text"`
-	Address       string    `gorm:"type:text"`
-	PhoneBusiness string    `gorm:"type:varchar(20)"`
-	CreatedAt     time.Time
+	ID            string    `gorm:"type:varchar(36);primaryKey" json:"id"`
+	UserID        string    `gorm:"type:varchar(36);uniqueIndex;not null" json:"user_id"`
+	Name          string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description   string    `gorm:"type:text" json:"description"`
+	Address       string    `gorm:"type:text" json:"address"`
+	PhoneBusiness string    `gorm:"type:varchar(20)" json:"phone_business"`
+	CreatedAt     time.Time `json:"created_at"`
 
-	User         User          `gorm:"foreignKey:UserID"`
-	Bots         []Bot         `gorm:"foreignKey:BusinessID"`
-	BotDocuments []BotDocument `gorm:"foreignKey:BusinessID"`
-	Customers    []Customer    `gorm:"foreignKey:BusinessID"`
-	Products     []Product     `gorm:"foreignKey:BusinessID"`
-	Orders       []Order       `gorm:"foreignKey:BusinessID"`
+	User         User          `gorm:"foreignKey:UserID" json:"user"`
+	Bots         []Bot         `gorm:"foreignKey:BusinessID" json:"bots"`
+	Customers    []Customer    `gorm:"foreignKey:BusinessID" json:"customers"`
+	Products     []Product     `gorm:"foreignKey:BusinessID" json:"products"`
+	Orders       []Order       `gorm:"foreignKey:BusinessID" json:"orders"`
 }
-
 
 // Hook ini otomatis kepanggil GORM sebelum proses INSERT
 func (b *Business) BeforeCreate(tx *gorm.DB) error {

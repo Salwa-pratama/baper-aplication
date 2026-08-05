@@ -9,18 +9,18 @@ import (
 
 // ChatSession Model
 type ChatSession struct {
-	ID         string    `gorm:"type:varchar(36);primaryKey"`
-	BotID      string    `gorm:"type:varchar(36);not null"`
-	CustomerID string    `gorm:"type:varchar(36);not null"`
-	StartedAt  time.Time
-	EndedAt    *time.Time
-	Status     string    `gorm:"type:varchar(50)"`
+	ID         string     `gorm:"type:varchar(36);primaryKey" json:"id"`
+	BotID      string     `gorm:"type:varchar(36);not null" json:"bot_id"`
+	CustomerID string     `gorm:"type:varchar(36);not null" json:"customer_id"`
+	StartedAt  time.Time  `json:"started_at"`
+	EndedAt    *time.Time `json:"ended_at"`
+	Status     string     `gorm:"type:varchar(50)" json:"status"`
 
-	Bot              Bot               `gorm:"foreignKey:BotID"`
-	Customer         Customer          `gorm:"foreignKey:CustomerID"`
-	Messages         []Message         `gorm:"foreignKey:SessionID"`
-	OrderRecapDrafts []OrderRecapDraft `gorm:"foreignKey:SessionID"`
-	Orders           []Order           `gorm:"foreignKey:SessionID"`
+	Bot              Bot               `gorm:"foreignKey:BotID" json:"bot"`
+	Customer         Customer          `gorm:"foreignKey:CustomerID" json:"customer"`
+	Messages         []Message         `gorm:"foreignKey:SessionID" json:"messages"`
+	OrderRecapDrafts []OrderRecapDraft `gorm:"foreignKey:SessionID" json:"order_recap_drafts"`
+	Orders           []Order           `gorm:"foreignKey:SessionID" json:"orders"`
 }
 
 // Hook ini otomatis kepanggil GORM sebelum proses INSERT
@@ -30,4 +30,3 @@ func (cs *ChatSession) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-

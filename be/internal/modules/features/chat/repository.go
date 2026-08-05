@@ -43,7 +43,6 @@ func (r *repository) GenerateContent(prompt string) (string, error) {
 	fileBytes, err := os.ReadFile("internal/modules/features/chat/promt.txt")
 	if err != nil {
 		return "", fmt.Errorf("Gagal membaca file promt: %w", err)
-
 	}
 	characterAI := string(fileBytes)
 
