@@ -10,7 +10,7 @@ import (
 // Bot Model
 type Bot struct {
 	ID                  string         `gorm:"type:varchar(36);primaryKey" json:"id"`
-	BusinessID          string         `gorm:"type:varchar(36);not null" json:"business_id"`
+	BusinessID          string         `gorm:"type:varchar(36);uniqueIndex;not null" json:"business_id"`
 	Name                string         `gorm:"type:varchar(100);not null" json:"name"`
 	WaStatus            string         `gorm:"type:varchar(50)" json:"wa_status"`
 	AgentPrompt         string         `gorm:"type:text" json:"agent_prompt"`

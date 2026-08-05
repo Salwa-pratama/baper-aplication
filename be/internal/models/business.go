@@ -19,7 +19,7 @@ type Business struct {
 	CreatedAt     time.Time `json:"created_at"`
 
 	User         User          `gorm:"foreignKey:UserID" json:"user"`
-	Bots         []Bot         `gorm:"foreignKey:BusinessID" json:"bots"`
+	Bot          *Bot          `gorm:"foreignKey:BusinessID" json:"bot"`
 	Customers    []Customer    `gorm:"foreignKey:BusinessID" json:"customers"`
 	Products     []Product     `gorm:"foreignKey:BusinessID" json:"products"`
 	Orders       []Order       `gorm:"foreignKey:BusinessID" json:"orders"`
