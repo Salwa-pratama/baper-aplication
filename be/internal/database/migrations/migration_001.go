@@ -21,7 +21,6 @@ func Migration001(db *gorm.DB) (string, error) {
 		&models.ChatSession{},
 		&models.Order{},
 		&models.Message{},
-		&models.OrderRecapDraft{},
 		&models.OrderItem{},
 	)
 	return migration_id, err

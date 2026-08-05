@@ -19,7 +19,6 @@ type ChatSession struct {
 	Bot              Bot               `gorm:"foreignKey:BotID" json:"bot"`
 	Customer         Customer          `gorm:"foreignKey:CustomerID" json:"customer"`
 	Messages         []Message         `gorm:"foreignKey:SessionID" json:"messages"`
-	OrderRecapDrafts []OrderRecapDraft `gorm:"foreignKey:SessionID" json:"order_recap_drafts"`
 	Orders           []Order           `gorm:"foreignKey:SessionID" json:"orders"`
 }
 
