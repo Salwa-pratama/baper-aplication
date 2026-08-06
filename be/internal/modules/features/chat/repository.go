@@ -17,6 +17,7 @@ type Repository interface {
 	FindCustomerByPhone(phone string) (*models.Customer, error)
 	CreateCustomer(customer *models.Customer) error
 	FindActiveChatSession(botID, customerID string) (*models.ChatSession, error)
+	GetRecentMessages(sessionID string, limit int) ([]models.Message, error)
 	GetProductsByBusinessID(businessID string) ([]models.Product, error)
 	SaveOrder(order *models.Order, items []models.OrderItem) error
 	GenerateContent(botPrompt string, historyMsgs []models.Message, productCatalog string, prompt string) (string, error)

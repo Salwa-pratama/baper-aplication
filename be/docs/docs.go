@@ -834,8 +834,7 @@ const docTemplate = `{
             "required": [
                 "business_name",
                 "email",
-                "first_name",
-                "last_name",
+                "name",
                 "password"
             ],
             "properties": {
@@ -854,10 +853,7 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
+                "name": {
                     "type": "string"
                 },
                 "password": {

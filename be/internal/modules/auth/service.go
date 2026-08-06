@@ -41,8 +41,7 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 		ID:           uuid.New().String(),
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
+		Name:         req.Name,
 	}
 
 	// 4. Buat Bisnis baru
@@ -99,7 +98,7 @@ func (s *service) SignIn(req LoginRequest) (AuthResponse, error) {
 			RefreshToken: refresh_token,
 			User: UserResponse{
 				ID : user.ID,
-				Name: user.FirstName + user.LastName,
+				Name: user.Name,
 			},
 		},
 	}, nil

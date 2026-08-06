@@ -31,8 +31,8 @@ func (c *RegisterController) Register(ctx *fiber.Ctx) error {
 	}
 
 	// Basic validation
-	if req.Email == "" || req.Password == "" || req.FirstName == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error("Email, Password, dan FirstName wajib diisi"))
+	if req.Email == "" || req.Password == "" || req.Name == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error("Email, Password, dan Name wajib diisi"))
 	}
 
 	response, err := c.service.Register(req)

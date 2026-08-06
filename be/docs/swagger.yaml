@@ -22,9 +22,7 @@ definitions:
         type: string
       email:
         type: string
-      first_name:
-        type: string
-      last_name:
+      name:
         type: string
       password:
         minLength: 6
@@ -32,8 +30,7 @@ definitions:
     required:
     - business_name
     - email
-    - first_name
-    - last_name
+    - name
     - password
     type: object
   bot.UpdateBotPromptRequest:

@@ -38,8 +38,7 @@ func main() {
 		ID:           uuid.New().String(),
 		Email:        "admin@baper.com",
 		PasswordHash: string(hashedPassword),
-		FirstName:    "Admin",
-		LastName:     "Baper",
+		Name:         "Admin Baper",
 	}
 
 	// Cek apakah user sudah ada
