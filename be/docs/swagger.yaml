@@ -1,32 +1,6 @@
 basePath: /
 definitions:
-  baper_internal_common_res.Response:
-    properties:
-      data: {}
-      message:
-        type: string
-      status:
-        type: boolean
-    type: object
-  internal_modules_auth.AuthData:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-      user:
-        $ref: '#/definitions/internal_modules_auth.UserResponse'
-    type: object
-  internal_modules_auth.AuthResponse:
-    properties:
-      data:
-        $ref: '#/definitions/internal_modules_auth.AuthData'
-      message:
-        type: string
-      status:
-        type: boolean
-    type: object
-  internal_modules_auth.LoginRequest:
+  auth.LoginRequest:
     properties:
       email:
         type: string
@@ -36,8 +10,16 @@ definitions:
     - email
     - password
     type: object
-  internal_modules_auth.RegisterRequest:
+  auth.RegisterRequest:
     properties:
+      business_address:
+        type: string
+      business_description:
+        type: string
+      business_name:
+        type: string
+      business_phone:
+        type: string
       email:
         type: string
       first_name:
@@ -47,23 +29,23 @@ definitions:
       password:
         minLength: 6
         type: string
-      phone:
-        type: string
     required:
+    - business_name
     - email
     - first_name
     - last_name
     - password
-    - phone
     type: object
-  internal_modules_auth.UserResponse:
+  bot.UpdateBotPromptRequest:
     properties:
-      id:
+      agent_api:
+        example: https://api.example.com
         type: string
-      name:
+      agent_prompt:
+        example: Kamu adalah asisten e-commerce AI yang ramah.
         type: string
     type: object
-  internal_modules_features_busines.RegisterBusinessRequest:
+  busines.RegisterBusinessRequest:
     properties:
       address:
         type: string
@@ -78,75 +60,75 @@ definitions:
     - name
     - phone_business
     type: object
-  internal_modules_features_chat.Change:
+  chat.Change:
     properties:
       field:
         type: string
       value:
-        $ref: '#/definitions/internal_modules_features_chat.ChangeValue'
+        $ref: '#/definitions/chat.ChangeValue'
     type: object
-  internal_modules_features_chat.ChangeValue:
+  chat.ChangeValue:
     properties:
       contacts:
         items:
-          $ref: '#/definitions/internal_modules_features_chat.Contact'
+          $ref: '#/definitions/chat.Contact'
         type: array
       messages:
         items:
-          $ref: '#/definitions/internal_modules_features_chat.Message'
+          $ref: '#/definitions/chat.Message'
         type: array
       messaging_product:
         type: string
       metadata:
-        $ref: '#/definitions/internal_modules_features_chat.Metadata'
+        $ref: '#/definitions/chat.Metadata'
     type: object
-  internal_modules_features_chat.Contact:
+  chat.Contact:
     properties:
       profile:
-        $ref: '#/definitions/internal_modules_features_chat.Profile'
+        $ref: '#/definitions/chat.Profile'
       wa_id:
         type: string
     type: object
-  internal_modules_features_chat.Entry:
+  chat.Entry:
     properties:
       changes:
         items:
-          $ref: '#/definitions/internal_modules_features_chat.Change'
+          $ref: '#/definitions/chat.Change'
         type: array
       id:
         type: string
     type: object
-  internal_modules_features_chat.Message:
+  chat.Message:
     properties:
       from:
         type: string
       id:
         type: string
       text:
-        $ref: '#/definitions/internal_modules_features_chat.MessageText'
+        $ref: '#/definitions/chat.MessageText'
       timestamp:
         type: string
       type:
         type: string
     type: object
-  internal_modules_features_chat.MessageText:
+  chat.MessageText:
     properties:
       body:
         type: string
     type: object
-  internal_modules_features_chat.Metadata:
+  chat.Metadata:
     properties:
       display_phone_number:
         type: string
       phone_number_id:
         type: string
     type: object
-  internal_modules_features_chat.Profile:
+  chat.Profile:
     properties:
       name:
         type: string
     type: object
-  internal_modules_features_chat.SendMediaMessage:
+  chat.SendMediaMessage:
     properties:
       caption:
         type: string
@@ -161,23 +143,23 @@ definitions:
     - to
     - type
     type: object
-  internal_modules_features_chat.SendMessage:
+  chat.SendMessage:
     properties:
       msg:
         type: string
       to:
         type: string
     type: object
-  internal_modules_features_chat.WebhookPayload:
+  chat.WebhookPayload:
     properties:
       entry:
         items:
-          $ref: '#/definitions/internal_modules_features_chat.Entry'
+          $ref: '#/definitions/chat.Entry'
         type: array
       object:
         type: string
     type: object
-  internal_modules_features_products.CreateProductRequest:
+  products.CreateProductRequest:
     properties:
       business_id:
         type: string
@@ -194,7 +176,7 @@ definitions:
     - name
     - price
     type: object
-  internal_modules_features_products.UpdateProductRequest:
+  products.UpdateProductRequest:
     properties:
       description:
         type: string
@@ -207,6 +189,14 @@ definitions:
     required:
     - name
     - price
+    type: object
+  res.Response:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: boolean
     type: object
 host: localhost:3000
 info:
@@ -226,24 +216,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_auth.LoginRequest'
+          $ref: '#/definitions/auth.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_auth.AuthResponse'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/res.Response'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/res.Response'
       summary: Login User
       tags:
       - Auth
@@ -258,23 +246,147 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_auth.RegisterRequest'
+          $ref: '#/definitions/auth.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/res.Response'
       summary: Register New User
       tags:
       - Auth
+  /api/bots/{id}/prompt:
+    put:
+      consumes:
+      - application/json
+      description: Update the AI Agent Prompt and API configuration for the bot
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bot Configuration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bot.UpdateBotPromptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.Response'
+      summary: Update Bot Prompt & API
+      tags:
+      - Bot
+  /api/bots/{id}/toggle:
+    patch:
+      consumes:
+      - application/json
+      description: Enable or disable the AI bot for a specific business
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.Response'
+      summary: Toggle Bot Active Status
+      tags:
+      - Bot
+  /api/business/recap/monthly:
+    get:
+      consumes:
+      - application/json
+      description: Get monthly recap of total revenue and orders
+      parameters:
+      - description: Year (e.g. 2026)
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Month (1-12)
+        in: query
+        name: month
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
+      summary: Get Monthly Recap
+      tags:
+      - Business
+  /api/business/recap/monthly/export:
+    get:
+      description: Download monthly recap in CSV format
+      parameters:
+      - description: Year (e.g. 2026)
+        in: query
+        name: year
+        required: true
+        type: integer
+      - description: Month (1-12)
+        in: query
+        name: month
+        required: true
+        type: integer
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
+      summary: Export Monthly Recap to CSV
+      tags:
+      - Business
   /api/business/register:
     post:
       consumes:
@@ -286,22 +398,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_busines.RegisterBusinessRequest'
+          $ref: '#/definitions/busines.RegisterBusinessRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       security:
       - BearerAuth: []
       summary: Register a Business
@@ -323,11 +435,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Get All Products
       tags:
       - Products
@@ -341,22 +453,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_products.CreateProductRequest'
+          $ref: '#/definitions/products.CreateProductRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Create a Product
       tags:
       - Products
@@ -377,15 +489,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Delete Product
       tags:
       - Products
@@ -405,15 +517,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Get Product by ID
       tags:
       - Products
@@ -432,22 +544,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_products.UpdateProductRequest'
+          $ref: '#/definitions/products.UpdateProductRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Update Product
       tags:
       - Products
@@ -482,7 +594,7 @@ paths:
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Webhook Verification
       tags:
       - Webhook
@@ -498,18 +610,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_chat.SendMediaMessage'
+          $ref: '#/definitions/chat.SendMediaMessage'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Send Media via URL
       tags:
       - Webhook
@@ -524,22 +636,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_chat.SendMessage'
+          $ref: '#/definitions/chat.SendMessage'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Send Text Message
       tags:
       - Webhook
@@ -574,15 +686,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Send Media via File Upload
       tags:
       - Webhook
@@ -597,22 +709,22 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_features_chat.WebhookPayload'
+          $ref: '#/definitions/chat.WebhookPayload'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/baper_internal_common_res.Response'
+            $ref: '#/definitions/res.Response'
       summary: Receive Webhook
       tags:
       - Webhook

@@ -16,4 +16,9 @@ type RegisterBusinessResponse struct {
 	Name string `json:"name"`
 }
 
-
+type MonthlyRecapResponse struct {
+	TotalRevenue    float64 `json:"total_revenue"`
+	TotalOrders     int     `json:"total_orders"`
+	TotalPaidOrders int     `json:"total_paid_orders"`
+	TotalUnpaidOrders int   `json:"total_unpaid_orders"`
+}

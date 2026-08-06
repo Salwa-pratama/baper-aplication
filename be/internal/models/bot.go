@@ -12,8 +12,11 @@ type Bot struct {
 	ID                  string         `gorm:"type:varchar(36);primaryKey" json:"id"`
 	BusinessID          string         `gorm:"type:varchar(36);uniqueIndex;not null" json:"business_id"`
 	Name                string         `gorm:"type:varchar(100);not null" json:"name"`
+	WaNumber            string         `gorm:"type:varchar(50)" json:"wa_number"`
 	WaStatus            string         `gorm:"type:varchar(50)" json:"wa_status"`
 	AgentPrompt         string         `gorm:"type:text" json:"agent_prompt"`
+	AgentAPI			string 			`gorm:"type:text" json:"agent_api"`
+	IsActive            bool           `gorm:"default:true" json:"is_active"`
 	CreatedAt           time.Time      `json:"created_at"`
 
 	UpdatedAt           time.Time      `json:"updated_at"`

@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_auth.LoginRequest"
+                            "$ref": "#/definitions/auth.LoginRequest"
                         }
                     }
                 ],
@@ -43,21 +43,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_auth.AuthResponse"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -83,7 +81,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_auth.RegisterRequest"
+                            "$ref": "#/definitions/auth.RegisterRequest"
                         }
                     }
                 ],
@@ -91,15 +89,207 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/bots/{id}/prompt": {
+            "put": {
+                "description": "Update the AI Agent Prompt and API configuration for the bot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bot"
+                ],
+                "summary": "Update Bot Prompt \u0026 API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bot ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bot Configuration",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bot.UpdateBotPromptRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/bots/{id}/toggle": {
+            "patch": {
+                "description": "Enable or disable the AI bot for a specific business",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bot"
+                ],
+                "summary": "Toggle Bot Active Status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bot ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/business/recap/monthly": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get monthly recap of total revenue and orders",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Business"
+                ],
+                "summary": "Get Monthly Recap",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Year (e.g. 2026)",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Month (1-12)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/business/recap/monthly/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Download monthly recap in CSV format",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Business"
+                ],
+                "summary": "Export Monthly Recap to CSV",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Year (e.g. 2026)",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Month (1-12)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -130,7 +320,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_busines.RegisterBusinessRequest"
+                            "$ref": "#/definitions/busines.RegisterBusinessRequest"
                         }
                     }
                 ],
@@ -138,19 +328,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -181,13 +371,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -211,7 +401,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_products.CreateProductRequest"
+                            "$ref": "#/definitions/products.CreateProductRequest"
                         }
                     }
                 ],
@@ -219,19 +409,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -263,19 +453,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -306,7 +496,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_products.UpdateProductRequest"
+                            "$ref": "#/definitions/products.UpdateProductRequest"
                         }
                     }
                 ],
@@ -314,19 +504,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -356,19 +546,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -420,7 +610,7 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -446,7 +636,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_chat.SendMediaMessage"
+                            "$ref": "#/definitions/chat.SendMediaMessage"
                         }
                     }
                 ],
@@ -454,13 +644,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -486,7 +676,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_chat.SendMessage"
+                            "$ref": "#/definitions/chat.SendMessage"
                         }
                     }
                 ],
@@ -494,19 +684,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -558,19 +748,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -596,7 +786,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_features_chat.WebhookPayload"
+                            "$ref": "#/definitions/chat.WebhookPayload"
                         }
                     }
                 ],
@@ -604,19 +794,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/baper_internal_common_res.Response"
+                            "$ref": "#/definitions/res.Response"
                         }
                     }
                 }
@@ -624,47 +814,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "baper_internal_common_res.Response": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_modules_auth.AuthData": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/internal_modules_auth.UserResponse"
-                }
-            }
-        },
-        "internal_modules_auth.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_modules_auth.AuthData"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_modules_auth.LoginRequest": {
+        "auth.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -679,16 +829,28 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_auth.RegisterRequest": {
+        "auth.RegisterRequest": {
             "type": "object",
             "required": [
+                "business_name",
                 "email",
                 "first_name",
                 "last_name",
-                "password",
-                "phone"
+                "password"
             ],
             "properties": {
+                "business_address": {
+                    "type": "string"
+                },
+                "business_description": {
+                    "type": "string"
+                },
+                "business_name": {
+                    "type": "string"
+                },
+                "business_phone": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -701,24 +863,23 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 6
-                },
-                "phone": {
-                    "type": "string"
                 }
             }
         },
-        "internal_modules_auth.UserResponse": {
+        "bot.UpdateBotPromptRequest": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "string"
+                "agent_api": {
+                    "type": "string",
+                    "example": "https://api.example.com"
                 },
-                "name": {
-                    "type": "string"
+                "agent_prompt": {
+                    "type": "string",
+                    "example": "Kamu adalah asisten e-commerce AI yang ramah."
                 }
             }
         },
-        "internal_modules_features_busines.RegisterBusinessRequest": {
+        "busines.RegisterBusinessRequest": {
             "type": "object",
             "required": [
                 "address",
@@ -740,58 +901,58 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.Change": {
+        "chat.Change": {
             "type": "object",
             "properties": {
                 "field": {
                     "type": "string"
                 },
                 "value": {
-                    "$ref": "#/definitions/internal_modules_features_chat.ChangeValue"
+                    "$ref": "#/definitions/chat.ChangeValue"
                 }
             }
         },
-        "internal_modules_features_chat.ChangeValue": {
+        "chat.ChangeValue": {
             "type": "object",
             "properties": {
                 "contacts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_modules_features_chat.Contact"
+                        "$ref": "#/definitions/chat.Contact"
                     }
                 },
                 "messages": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_modules_features_chat.Message"
+                        "$ref": "#/definitions/chat.Message"
                     }
                 },
                 "messaging_product": {
                     "type": "string"
                 },
                 "metadata": {
-                    "$ref": "#/definitions/internal_modules_features_chat.Metadata"
+                    "$ref": "#/definitions/chat.Metadata"
                 }
             }
         },
-        "internal_modules_features_chat.Contact": {
+        "chat.Contact": {
             "type": "object",
             "properties": {
                 "profile": {
-                    "$ref": "#/definitions/internal_modules_features_chat.Profile"
+                    "$ref": "#/definitions/chat.Profile"
                 },
                 "wa_id": {
                     "type": "string"
                 }
             }
         },
-        "internal_modules_features_chat.Entry": {
+        "chat.Entry": {
             "type": "object",
             "properties": {
                 "changes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_modules_features_chat.Change"
+                        "$ref": "#/definitions/chat.Change"
                     }
                 },
                 "id": {
@@ -799,7 +960,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.Message": {
+        "chat.Message": {
             "type": "object",
             "properties": {
                 "from": {
@@ -809,7 +970,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "text": {
-                    "$ref": "#/definitions/internal_modules_features_chat.MessageText"
+                    "$ref": "#/definitions/chat.MessageText"
                 },
                 "timestamp": {
                     "type": "string"
@@ -819,7 +980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.MessageText": {
+        "chat.MessageText": {
             "type": "object",
             "properties": {
                 "body": {
@@ -827,7 +988,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.Metadata": {
+        "chat.Metadata": {
             "type": "object",
             "properties": {
                 "display_phone_number": {
@@ -838,7 +999,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.Profile": {
+        "chat.Profile": {
             "type": "object",
             "properties": {
                 "name": {
@@ -846,7 +1007,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.SendMediaMessage": {
+        "chat.SendMediaMessage": {
             "type": "object",
             "required": [
                 "to",
@@ -868,7 +1029,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.SendMessage": {
+        "chat.SendMessage": {
             "type": "object",
             "properties": {
                 "msg": {
@@ -879,13 +1040,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_chat.WebhookPayload": {
+        "chat.WebhookPayload": {
             "type": "object",
             "properties": {
                 "entry": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_modules_features_chat.Entry"
+                        "$ref": "#/definitions/chat.Entry"
                     }
                 },
                 "object": {
@@ -893,7 +1054,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_products.CreateProductRequest": {
+        "products.CreateProductRequest": {
             "type": "object",
             "required": [
                 "business_id",
@@ -918,7 +1079,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_modules_features_products.UpdateProductRequest": {
+        "products.UpdateProductRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -936,6 +1097,18 @@ const docTemplate = `{
                 },
                 "stock": {
                     "type": "integer"
+                }
+            }
+        },
+        "res.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "boolean"
                 }
             }
         }

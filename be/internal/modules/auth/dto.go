@@ -1,11 +1,14 @@
 package auth
 
 type RegisterRequest struct {
-	FirstName string `json:"first_name" validate:"required"`
-	LastName  string `json:"last_name" validate:"required"`
-	Email     string `json:"email" validate:"required,email"`
-	
-	Password  string `json:"password" validate:"required,min=6"`
+	FirstName       string `json:"first_name" validate:"required"`
+	LastName        string `json:"last_name" validate:"required"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,min=6"`
+	BusinessName    string `json:"business_name" validate:"required"`
+	BusinessDesc    string `json:"business_description"`
+	BusinessAddress string `json:"business_address"`
+	BusinessPhone   string `json:"business_phone"`
 }
 
 type RegisterResponse struct {

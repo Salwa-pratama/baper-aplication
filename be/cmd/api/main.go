@@ -1,7 +1,7 @@
 package main
 
 import (
-	"baper/config"
+	"baper/internal/config"
 	"baper/internal/router"
 	"log"
 	"os"

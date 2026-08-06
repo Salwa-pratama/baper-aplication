@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	FindByEmail(email string) (*models.User, error)
 	CreateUser(user *models.User) error
+	CreateUserAndBusiness(user *models.User, business *models.Business) error
 }
 
 
@@ -35,7 +36,23 @@ func (r *repository) FindByEmail(email string) (*models.User, error ) {
 }
 
 
-// Untuk register akun baru
+// Untuk register akun baru (User Saja)
 func (r *repository) CreateUser(user *models.User) error {
 	return r.db.Create(user).Error
+}
+
+// Untuk register User beserta Bisnis dalam satu transaksi
+func (r *repository) CreateUserAndBusiness(user *models.User, business *models.Business) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return err
+		}
+		
+		business.UserID = user.ID
+		if err := tx.Create(business).Error; err != nil {
+			return err
+		}
+		
+		return nil
+	})
 }

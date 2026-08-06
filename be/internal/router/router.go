@@ -5,6 +5,7 @@ import (
 	"baper/internal/modules/features/busines"
 	"baper/internal/modules/features/chat"
 	"baper/internal/modules/features/products"
+	"baper/internal/modules/features/bot"
 	"baper/internal/config"
 	_ "baper/docs"
 
@@ -24,4 +25,6 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	chat.InitRoutes(api,db)
 	busines.InitRoutes(api, db)
 	products.InitRoutes(api, db)
+	bot.InitRoutes(api, db)
 }
+

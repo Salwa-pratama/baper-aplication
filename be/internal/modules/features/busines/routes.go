@@ -19,4 +19,6 @@ func InitRoutes(router fiber.Router, db *gorm.DB) {
 	business := router.Group("/business")
 
 	business.Post("/register",middleware.AuthMiddleware(), ctrl.RegisterBusiness)
+	business.Get("/recap/monthly", middleware.AuthMiddleware(), ctrl.GetMonthlyRecap)
+	business.Get("/recap/monthly/export", middleware.AuthMiddleware(), ctrl.ExportMonthlyRecap)
 }

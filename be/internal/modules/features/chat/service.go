@@ -13,6 +13,7 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"baper/internal/common/apperror"
@@ -157,32 +158,116 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		log.Printf("Gagal menyimpan pesan masuk: %v", errSave)
 	}
 
-	// Generate content promt
-	content, gagal := s.repo.GenerateContent(msg.Text.Body)
-	log.Print(content)
-	if gagal != nil {
-		log.Println("AI tidak merespon %w : ", gagal)
+	// Cek apakah Bot aktif
+	if !bot.IsActive {
+		log.Printf("Bot %s sedang tidak aktif, mengabaikan AI reply", bot.Name)
+		return Response{
+			Status:  "ok",
+			Message: "Pesan masuk disimpan, bot sedang tidak aktif",
+			Data:    nil,
+		}, nil
 	}
 
-	// 🔥 Panggil fungsi SendMessage untuk mengirim balasan
-	err = s.SendMessage(msg.From, content)
-	if err != nil {
-		log.Println("Gagal balas pesan:", err)
-	} else {
-		// 5. Simpan Pesan Keluar (Bot AI)
-		outgoingMsg := &models.Message{
-			SessionID:  session.ID,
-			SenderType: "bot",
-			Content:    content,
+	// 🔥 FAST-ACK: Jalankan AI dan pemrosesan order di Goroutine (Background)
+	// Agar webhook langsung me-return 200 OK ke Meta dan mencegah Meta melakukan retry timeout.
+	go func(botData *models.Bot, customerData *models.Customer, sessionData *models.ChatSession, msgBody string, senderPhone string) {
+		// Fetch History
+		historyMsgs, _ := s.repo.GetRecentMessages(sessionData.ID, 10)
+
+		// Fetch Products
+		products, _ := s.repo.GetProductsByBusinessID(botData.BusinessID)
+		productsStr := ""
+		for _, p := range products {
+			productsStr += fmt.Sprintf("- ID: %s | %s | Harga: %.2f | Stok: %d\n", p.ID, p.Name, p.Price, p.Stock)
 		}
-		if errSaveOut := s.repo.SaveMessage(outgoingMsg); errSaveOut != nil {
-			log.Printf("Gagal menyimpan pesan bot: %v", errSaveOut)
+
+		// 5. Build RAG Prompt context
+		content, gagal := s.repo.GenerateContent(botData.AgentPrompt, historyMsgs, productsStr, msgBody)
+		if gagal != nil {
+			log.Println("AI tidak merespon: ", gagal)
+			return // Jika gagal, jangan balas apa-apa
 		}
-	}
+		log.Print("AI Output: ", content)
+
+		// Parse JSON output if exists
+		cleanContent := content
+		if jsonStart := strings.Index(content, "```json"); jsonStart != -1 {
+			jsonEnd := strings.Index(content[jsonStart+7:], "```")
+			if jsonEnd != -1 {
+				jsonStr := content[jsonStart+7 : jsonStart+7+jsonEnd]
+				
+				var orderPayload struct {
+					IsOrderFinal bool `json:"is_order_final"`
+					Items []struct {
+						ProductID string `json:"product_id"`
+						Qty int `json:"qty"`
+					} `json:"items"`
+				}
+				
+				if err := json.Unmarshal([]byte(jsonStr), &orderPayload); err == nil && orderPayload.IsOrderFinal {
+					// Create Order
+					var orderTotal float64
+					var orderItems []models.OrderItem
+					for _, item := range orderPayload.Items {
+						// find price
+						var price float64
+						for _, p := range products {
+							if p.ID == item.ProductID {
+								price = p.Price
+								break
+							}
+						}
+						orderItems = append(orderItems, models.OrderItem{
+							ProductID: item.ProductID,
+							Quantity: item.Qty,
+							Price:    price,
+						})
+						orderTotal += price * float64(item.Qty)
+					}
+
+					if len(orderItems) > 0 {
+						sessIDStr := sessionData.ID
+						newOrder := &models.Order{
+							CustomerID: customerData.ID,
+							BusinessID: botData.BusinessID,
+							SessionID: &sessIDStr,
+							TotalAmount: orderTotal,
+							Status: models.OrderStatusUnpaid, // Sesuai model OrderStatus baru
+						}
+						
+						if err := s.repo.SaveOrder(newOrder, orderItems); err != nil {
+							log.Printf("Gagal menyimpan auto order: %v", err)
+						} else {
+							log.Printf("Berhasil membuat auto order dengan ID: %s", newOrder.ID)
+						}
+					}
+				}
+				
+				// Remove the JSON part from the response sent to user
+				cleanContent = strings.TrimSpace(content[:jsonStart] + content[jsonStart+7+jsonEnd+3:])
+			}
+		}
+
+		// 🔥 Panggil fungsi SendMessage untuk mengirim balasan
+		errSend := s.SendMessage(senderPhone, cleanContent)
+		if errSend != nil {
+			log.Println("Gagal balas pesan:", errSend)
+		} else {
+			// 5. Simpan Pesan Keluar (Bot AI)
+			outgoingMsg := &models.Message{
+				SessionID:  sessionData.ID,
+				SenderType: "bot",
+				Content:    cleanContent, // Simpan cleanContent (tanpa JSON) ke history database
+			}
+			if errSaveOut := s.repo.SaveMessage(outgoingMsg); errSaveOut != nil {
+				log.Printf("Gagal menyimpan pesan bot: %v", errSaveOut)
+			}
+		}
+	}(bot, customer, session, msg.Text.Body, msg.From)
 
 	return Response{
 		Status:  "ok",
-		Message: "Ada pesan masuk",
+		Message: "Ada pesan masuk, memproses di background",
 		Data: map[string]string{
 			"phone": phone.PhoneNumberID,
 			"from":  msg.From,

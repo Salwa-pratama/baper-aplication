@@ -1,6 +1,9 @@
 package auth
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"baper/internal/common/res"
+	"github.com/gofiber/fiber/v2"
+)
 
 type RegisterController struct {
 	service Service
@@ -17,37 +20,25 @@ func NewRegisterController(service Service) *RegisterController {
 // @Accept json
 // @Produce json
 // @Param request body RegisterRequest true "Registration Data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
+// @Success 201 {object} res.Response
+// @Failure 400 {object} res.Response
 // @Router /api/auth/register [post]
 func (c *RegisterController) Register(ctx *fiber.Ctx) error {
 	var req RegisterRequest
 
 	if err := ctx.BodyParser(&req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Format request tidak valid",
-		})
+		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error("Format request tidak valid"))
 	}
 
 	// Basic validation
 	if req.Email == "" || req.Password == "" || req.FirstName == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Email, Password, dan FirstName wajib diisi",
-		})
+		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error("Email, Password, dan FirstName wajib diisi"))
 	}
 
 	response, err := c.service.Register(req)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return ctx.Status(fiber.StatusBadRequest).JSON(res.Error(err.Error()))
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status": "success",
-		"message" : response,
-	})
+	return ctx.Status(fiber.StatusCreated).JSON(res.Success("Register successfully", response))
 }

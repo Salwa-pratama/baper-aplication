@@ -45,9 +45,18 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 		LastName:     req.LastName,
 	}
 
-	// 4. Simpan ke database
-	if err := s.repo.CreateUser(newUser); err != nil {
-		return RegisterResponse{}, errors.New("gagal menyimpan data user")
+	// 4. Buat Bisnis baru
+	newBusiness := &models.Business{
+		ID:            uuid.New().String(),
+		Name:          req.BusinessName,
+		Description:   req.BusinessDesc,
+		Address:       req.BusinessAddress,
+		PhoneBusiness: req.BusinessPhone,
+	}
+
+	// 5. Simpan ke database (User dan Bisnis) menggunakan transaksi
+	if err := s.repo.CreateUserAndBusiness(newUser, newBusiness); err != nil {
+		return RegisterResponse{}, errors.New("gagal menyimpan data user dan bisnis")
 	}
 
 	return  RegisterResponse{
