@@ -19,7 +19,7 @@ type service struct {
 	repo Repository
 }
 
-func NewLoginService(repo Repository) Service {
+func NewAuthService(repo Repository) Service {
 	return &service{repo}
 }
 
@@ -59,8 +59,8 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 	}
 
 	return  RegisterResponse{
-		Status: true,
-		Message: "Register successfully",
+		IdUser: newUser.ID,
+		Name: newUser.Name,
 	}, nil
 }
 

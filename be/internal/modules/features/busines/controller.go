@@ -42,7 +42,7 @@ func (c *BusinessController) RegisterBusiness(ctx *fiber.Ctx) error {
 
 	business, err := c.service.RegisterBusiness(ctx.Context(), userID, req)
 	if err != nil {
-		return res.HandleError(ctx, err) // <-- ganti ini, biar baca Code dari AppError
+		return res.HandleError(ctx, err) 
 	}
 
 

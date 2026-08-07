@@ -11,8 +11,8 @@ type RegisterRequest struct {
 }
 
 type RegisterResponse struct {
-	Status bool `json:"status"`
-	Message string `json:"message"`
+	IdUser string `json:"id_user"`
+	Name  string `json:"name"`
 }
 
 type LoginRequest struct {

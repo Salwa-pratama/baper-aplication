@@ -21,7 +21,7 @@ type repository struct {
 
 
 // Main Function
-func NewLoginRepository(db *gorm.DB) Repository {
+func NewAuthRepository(db *gorm.DB) Repository {
 	return  &repository{db}
 }
 
@@ -47,12 +47,12 @@ func (r *repository) CreateUserAndBusiness(user *models.User, business *models.B
 		if err := tx.Create(user).Error; err != nil {
 			return err
 		}
-		
+
 		business.UserID = user.ID
 		if err := tx.Create(business).Error; err != nil {
 			return err
 		}
-		
+
 		return nil
 	})
 }

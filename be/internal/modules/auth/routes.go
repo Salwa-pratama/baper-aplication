@@ -6,8 +6,8 @@ import (
 )
 
 func InitRoutes(router fiber.Router, db *gorm.DB) {
-	repo := NewLoginRepository(db) // Mungkin nanti lebih baik namanya NewAuthRepository
-	svc := NewLoginService(repo)   // Mungkin nanti lebih baik namanya NewAuthService
+	repo := NewAuthRepository(db) // Mungkin nanti lebih baik namanya NewAuthRepository
+	svc := NewAuthService(repo)   // Mungkin nanti lebih baik namanya NewAuthService
 	loginCtrl := NewLoginController(svc)
 	registerCtrl := NewRegisterController(svc)
 
