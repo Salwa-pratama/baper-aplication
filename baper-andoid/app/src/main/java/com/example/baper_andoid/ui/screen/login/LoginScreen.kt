@@ -1,9 +1,7 @@
 package com.example.baper_andoid.ui.screen.login
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -137,6 +135,18 @@ fun LoginScreen(
     val customTextSelectionColors = TextSelectionColors(
         handleColor = brandGreen,
         backgroundColor = brandGreen.copy(alpha = 0.4f)
+    )
+
+    // Animasi Panah Bergerak (Maju Mundur)
+    val infiniteTransition = rememberInfiniteTransition(label = "arrowTransition")
+    val arrowOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "arrowOffset"
     )
 
     LaunchedEffect(state) {
@@ -319,7 +329,9 @@ fun LoginScreen(
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowForward, 
                                     contentDescription = null, 
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .offset(x = arrowOffset.dp),
                                     tint = Color.White
                                 )
                             }
