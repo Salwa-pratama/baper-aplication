@@ -1,26 +1,39 @@
-# Walkthrough - Perbaikan Error MainActivity.kt
+# Walkthrough - Pembaruan Tampilan Login Screen
 
-Saya telah memperbaiki berbagai error di `MainActivity.kt` yang disebabkan oleh dependensi yang hilang, kesalahan paket, dan penempatan resource yang salah.
+Saya telah memperbarui `LoginScreen.kt` untuk mengikuti desain modern yang dijelaskan dalam `Login.json`. Tampilan sekarang jauh lebih profesional dan sesuai dengan identitas brand Baper.
 
-## Perubahan yang Dilakukan
+## Perubahan Utama
 
-### Konfigurasi Build
-- Menambahkan `com.airbnb.android:lottie-compose:6.7.1` ke [libs.versions.toml](file:///C:/Yasa/app/baper-aplication/baper-andoid/gradle/libs.versions.toml).
-- Menambahkan dependensi tersebut ke [build.gradle.kts](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/build.gradle.kts).
+### 1. Header Animasi Lottie
+- Menambahkan integrasi Lottie di bagian atas menggunakan animasi `logo_vectorized`.
+- Animasi diatur untuk berulang (*loop*) terus-menerus.
 
-### Resource
-- Membuat direktori `app/src/main/res/raw/`.
-- Memindahkan `logo_vectorized.json` ke direktori `raw` tersebut sehingga bisa diakses melalui `R.raw.logo_vectorized`.
+### 2. Struktur Layout & Card
+- **Background**: Menggunakan warna abu-abu kehijauan yang sangat muda (`#F7F9F8`).
+- **Card**: Form login kini dibungkus dalam `Card` putih dengan sudut membulat (*RoundedCornerShape*) dan elevasi halus.
 
-### Kode Sumber
-- Memperbarui package name di [MainActivity.kt](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/src/main/java/com/example/baper_andoid/MainActivity.kt) menjadi `com.example.baper_andoid`.
-- Mengganti penggunaan tema dari `MyApplicationTheme` yang tidak ada menjadi `BaperandoidTheme`.
-- Memperbaiki import Lottie dan tema.
+### 3. Input Form yang Ditingkatkan
+- **Nomor WhatsApp**:
+    - Menambahkan ikon telepon di sisi kiri.
+    - Menambahkan prefix "+62 " agar pengguna hanya perlu memasukkan nomor intinya.
+    - Keyboard otomatis diatur ke tipe `Phone`.
+- **PIN Keamanan**:
+    - Menambahkan fitur toggle visibilitas (ikon mata) untuk melihat/menyembunyikan PIN.
+    - Keyboard otomatis diatur ke tipe `NumberPassword`.
+    - Menggunakan desain warna hijau brand (`#107C42`) untuk label dan fokus.
+
+### 4. Tombol Aksi & Navigasi
+- **Tombol Masuk**: Diberi warna hijau brand dengan teks tebal dan ikon panah ke kanan. Tombol juga menampilkan status "Memproses..." saat sedang login.
+- **Footer**: Tautan "Daftar Sekarang" di bagian bawah untuk navigasi ke layar registrasi.
 
 ## Hasil Verifikasi
 
-### Build Gradle
-- Berhasil menjalankan perintah `./gradlew :app:assembleDebug`.
+### Build Sukses
+- Perintah `./gradlew :app:assembleDebug` dijalankan dan berhasil tanpa error.
 
-### Status IDE
-- Semua tanda merah (error) pada `MainActivity.kt` seharusnya sudah hilang.
+### Kode Terintegrasi
+- Logika login tetap menggunakan `LoginViewModel` yang sudah ada, memastikan kompatibilitas fungsionalitas.
+
+---
+> [!TIP]
+> Pastikan file `res/raw/logo_vectorized.json` tetap tersedia agar animasi Lottie dapat muncul dengan benar di perangkat.

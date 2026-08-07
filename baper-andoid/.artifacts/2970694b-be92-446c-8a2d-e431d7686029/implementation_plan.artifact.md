@@ -1,36 +1,34 @@
-# Implementation Plan - Fix MainActivity.kt Errors
+# Rencana Implementasi - Perbarui Tampilan LoginScreen.kt sesuai Login.json
 
-The `MainActivity.kt` file has several errors including unresolved references for Lottie, incorrect package name, and incorrect theme usage. Additionally, the Lottie animation file is in the wrong resource directory.
+Rencana ini bertujuan untuk mengubah tampilan `LoginScreen.kt` agar sesuai dengan desain yang dijelaskan dalam `Login.json` (desain modern dengan Card, input nomor WhatsApp, dan PIN), serta mengintegrasikan logika dari `LoginViewModel.kt`.
 
-## Proposed Changes
+## Perubahan yang Diusulkan
 
-### Build Configuration
+### UI Screen
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Yasa/app/baper-aplication/baper-andoid/gradle/libs.versions.toml)
-- Add Lottie Compose version and library definition.
+#### [MODIFY] [LoginScreen.kt](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginScreen.kt)
+- **Background**: Menggunakan warna latar belakang terang sesuai desain (`#F7F9F8`).
+- **Header**: Menampilkan animasi Lottie `logo_vectorized` sebagai identitas brand.
+- **Greeting**: Menambahkan teks "Selamat Datang!" dan sub-teks instruksi.
+- **Login Card**: Menggunakan `Card` (atau `Surface` dengan elevasi) untuk membungkus form input:
+    - **Nomor WhatsApp**: Input teks dengan awalan (prefix) "+62" dan ikon telepon.
+    - **PIN Keamanan**: Input password dengan fitur toggle visibilitas (ikon mata).
+- **Tombol Masuk**: Tombol "Masuk Sekarang" dengan warna hijau brand (`#107C42`) dan ikon panah ke kanan.
+- **Footer**: Tautan navigasi "Belum punya akun? Daftar Sekarang" di bagian bawah.
 
-#### [MODIFY] [build.gradle.kts](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/build.gradle.kts)
-- Add `libs.lottie.compose` to dependencies.
+### Logic & ViewModel
 
-### Resources
+#### [MODIFY] [LoginViewModel.kt](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginViewModel.kt)
+- Tidak ada perubahan besar pada logika, hanya memastikan parameter `email` pada fungsi `login` diisi dengan nomor WhatsApp dari UI, dan `password` diisi dengan PIN. *Catatan: Jika backend memerlukan format khusus, pembersihan string (seperti menghapus spasi/karakter non-digit) akan dilakukan di sini atau di UI.*
 
-#### [NEW] `app/src/main/res/raw/` directory
-- Create the `raw` resource directory.
+## Rencana Verifikasi
 
-#### [MOVE] `app/src/main/res/logo_vectorized.json` to `app/src/main/res/raw/logo_vectorized.json`
-- Move the Lottie animation file to the correct location so `R.raw.logo_vectorized` can be resolved.
+### Tes Otomatis
+- Menjalankan build `./gradlew :app:assembleDebug` untuk memastikan tidak ada kesalahan sintaks.
 
-### Source Code
-
-#### [MODIFY] [MainActivity.kt](file:///C:/Yasa/app/baper-aplication/baper-andoid/app/src/main/java/com/example/baper_andoid/MainActivity.kt)
-- Update package name to `com.example.baper_andoid`.
-- Update theme import and usage from `MyApplicationTheme` to `BaperandoidTheme`.
-- Ensure all Lottie imports are correct once the dependency is added.
-
-## Verification Plan
-
-### Automated Tests
-- Run `./gradlew :app:assembleDebug` to verify the project builds without errors.
-
-### Manual Verification
-- The IDE should no longer show red underlines for Lottie, the theme, or the `R.raw` resource.
+### Verifikasi Manual
+- Memeriksa tampilan di Android Studio Preview atau Emulator:
+    - Memastikan prefix "+62" muncul benar.
+    - Memastikan toggle mata pada PIN berfungsi.
+    - Memastikan animasi Lottie muncul di bagian atas.
+    - Memastikan navigasi ke Register tetap berfungsi melalui tombol di footer.
