@@ -1,0 +1,6 @@
+- [x] Create `SendMessageRequest.kt`
+- [x] Create `SendMediaRequest.kt`
+- [x] Create `ChatResponse.kt`
+- [x] Update `ApiService.kt` with Chat endpoints
+- [x] Create `ChatRepository.kt`
+- [x] Verify build and imports
