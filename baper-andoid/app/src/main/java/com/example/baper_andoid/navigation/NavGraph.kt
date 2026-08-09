@@ -34,7 +34,6 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.OnBoarding.route) {
             BaperOnboardingScreen(
-                composition = composition,
                 onFinished = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.OnBoarding.route) { inclusive = true }
