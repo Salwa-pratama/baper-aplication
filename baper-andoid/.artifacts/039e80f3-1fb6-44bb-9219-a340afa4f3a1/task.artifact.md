@@ -1,0 +1,9 @@
+- [x] Perapihan Tata Letak & Simetri Onboarding
+    - [x] Optimasi `DashboardPreview`
+        - [x] Standarisasi padding & spacing
+        - [x] Merapikan `RekapItem`
+    - [x] Optimasi `BaperOnboardingScreen`
+        - [x] Standarisasi padding horizontal utama (32.dp)
+        - [x] Penyesuaian `Spacer` antar elemen
+        - [x] Penyeimbangan posisi elemen bawah (Tombol & Indikator)
+    - [x] Verifikasi Build & Visual
