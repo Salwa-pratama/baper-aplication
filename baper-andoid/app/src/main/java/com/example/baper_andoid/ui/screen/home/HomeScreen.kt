@@ -2,6 +2,9 @@ package com.example.baper_andoid.ui.screen.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,13 +28,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
+import com.example.baper_andoid.ui.screen.chat.BaperChat
+import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.theme.InterFamily
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(
-    onLogout: () -> Unit
+    chatViewModel: ChatViewModel,
+    onLogout: () -> Unit,
+    onNavigateToChat: (String) -> Unit
 ) {
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
@@ -52,7 +57,10 @@ fun HomeScreen(
                 startDestination = BottomNavItem.Beranda.route
             ) {
                 composable(BottomNavItem.Beranda.route) {
-                    DashboardContent()
+                    DashboardContent(
+                        chatViewModel = chatViewModel,
+                        onNavigateToChat = onNavigateToChat
+                    )
                 }
                 composable(BottomNavItem.Produk.route) {
                     PlaceholderPage(title = "Halaman Produk")
@@ -71,12 +79,16 @@ fun HomeScreen(
 // --- Komponen Konten Dashboard (Beranda) ---
 
 @Composable
-fun DashboardContent() {
+fun DashboardContent(
+    chatViewModel: ChatViewModel,
+    onNavigateToChat: (String) -> Unit
+) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
     val textColorPrimary = Color(0xFF0F172A)
     
-    val mockChats = remember { getMockChats() }
+    // Mengambil data chat langsung dari ViewModel
+    val chats = chatViewModel.chatList
     
     Column(
         modifier = Modifier
@@ -84,18 +96,17 @@ fun DashboardContent() {
             .background(bgGray)
     ) {
         // 1. Area Header yang Tetap (Fixed)
-        // Menggunakan Column agar bisa meletakkan Divider sebagai pembatas di bawah header
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(bgGray) // Menjamin konten di bawah tidak terlihat tembus
+                .background(bgGray)
                 .padding(top = 16.dp, start = 20.dp, end = 20.dp)
         ) {
             DashboardHeader(textColorPrimary)
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(
                 thickness = 1.dp,
-                color = Color(0xFFE2E8F0) // Warna pembatas yang halus
+                color = Color(0xFFE2E8F0)
             )
         }
 
@@ -138,18 +149,35 @@ fun DashboardContent() {
                         fontFamily = InterFamily,
                         color = textColorPrimary
                     )
-                    TextButton(
-                        onClick = {},
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("Lihat Semua", color = brandGreen, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                    }
+                    
+                    // Efek Interaksi Teks (Tanpa background button)
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    
+                    Text(
+                        text = "Lihat Semua",
+                        color = if (isPressed) brandGreen.copy(alpha = 0.6f) else brandGreen,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = InterFamily,
+                        modifier = Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = null // Menghapus efek ripple background
+                        ) {
+                            // Logic Lihat Semua
+                        }
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            items(mockChats) { chat ->
-                ChatListItem(chat, textColorPrimary)
+            // Loop data chat dari ViewModel
+            items(chats) { chat ->
+                ChatListItem(
+                    chat = chat, 
+                    textColor = textColorPrimary, 
+                    onClick = { onNavigateToChat(chat.id) }
+                )
             }
         }
     }
@@ -157,14 +185,12 @@ fun DashboardContent() {
 
 @Composable
 fun DashboardHeader(textColor: Color) {
-    // Menghilangkan Card dan hanya menyisakan elemen inti agar lebih minimalis
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Avatar Profil
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -209,7 +235,6 @@ fun DashboardHeader(textColor: Color) {
             }
         }
         
-        // Tombol Notifikasi
         IconButton(
             onClick = {},
             modifier = Modifier
@@ -305,7 +330,7 @@ fun QuickActionsSection(brandGreen: Color, textColor: Color) {
         QuickActionButton(
             title = "Cek Status Bot",
             icon = Icons.Default.Share,
-            brandColor = Color(0xFFF59E0B), // Warna Orange/Amber sesuai gambar
+            brandColor = Color(0xFFF59E0B),
             textColor = textColor,
             modifier = Modifier.weight(1f)
         )
@@ -348,10 +373,11 @@ fun QuickActionButton(
 }
 
 @Composable
-fun ChatListItem(chat: BaperChat, textColor: Color) {
+fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
     val brandGreen = Color(0xFF107C42)
     
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
@@ -366,7 +392,6 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar (Placeholder Foto)
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -384,9 +409,9 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
             
             Spacer(modifier = Modifier.width(12.dp))
             
-            // Informasi Chat
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = chat.name,
@@ -394,7 +419,7 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
                     fontSize = 14.sp,
                     fontFamily = InterFamily,
                     color = textColor,
-                    style = LocalTextStyle.current.copy(
+                    style = androidx.compose.ui.text.TextStyle(
                         platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                             includeFontPadding = false
                         )
@@ -407,7 +432,7 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
                     color = Color(0xFF64748B),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = LocalTextStyle.current.copy(
+                    style = androidx.compose.ui.text.TextStyle(
                         platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                             includeFontPadding = false
                         )
@@ -415,7 +440,6 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
                 )
             }
             
-            // Waktu & Badge Pesan Baru
             Column(
                 modifier = Modifier.padding(start = 8.dp),
                 horizontalAlignment = Alignment.End,
@@ -460,22 +484,6 @@ fun ChatListItem(chat: BaperChat, textColor: Color) {
         }
     }
 }
-
-data class BaperChat(
-    val name: String,
-    val lastMessage: String,
-    val time: String,
-    val unreadCount: Int = 0
-)
-
-fun getMockChats() = listOf(
-    BaperChat("Siti Reseller - Bandung", "Halo min, orderan Paket A 5 unit ready?", "09:12", 2),
-    BaperChat("Agus Sembako", "Siap, sudah saya transfer ya mas tadi siang", "Kemarin"),
-    BaperChat("Budi Gede Toko", "Minta rekapan totalan belanja seminggu ini ya", "Kemarin", 1),
-    BaperChat("Dedi Kurniawan", "Siap gan, langsung order.", "Kemarin")
-)
-
-// --- Halaman Placeholder ---
 
 @Composable
 fun PlaceholderPage(title: String) {
