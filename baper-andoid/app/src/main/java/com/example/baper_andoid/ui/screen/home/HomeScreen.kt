@@ -1,5 +1,6 @@
 package com.example.baper_andoid.ui.screen.home
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,13 +32,16 @@ import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
 import com.example.baper_andoid.ui.screen.chat.BaperChat
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
+import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.theme.InterFamily
 
 @Composable
 fun HomeScreen(
     chatViewModel: ChatViewModel,
+    botViewModel: BotViewModel,
     onLogout: () -> Unit,
-    onNavigateToChat: (String) -> Unit
+    onNavigateToChat: (String) -> Unit,
+    onNavigateToBotStatus: () -> Unit
 ) {
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
@@ -59,7 +64,9 @@ fun HomeScreen(
                 composable(BottomNavItem.Beranda.route) {
                     DashboardContent(
                         chatViewModel = chatViewModel,
-                        onNavigateToChat = onNavigateToChat
+                        botViewModel = botViewModel,
+                        onNavigateToChat = onNavigateToChat,
+                        onNavigateToBotStatus = onNavigateToBotStatus
                     )
                 }
                 composable(BottomNavItem.Produk.route) {
@@ -81,7 +88,9 @@ fun HomeScreen(
 @Composable
 fun DashboardContent(
     chatViewModel: ChatViewModel,
-    onNavigateToChat: (String) -> Unit
+    botViewModel: BotViewModel,
+    onNavigateToChat: (String) -> Unit,
+    onNavigateToBotStatus: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -131,7 +140,7 @@ fun DashboardContent(
                     color = Color(0xFF64748B)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                QuickActionsSection(brandGreen, textColorPrimary)
+                QuickActionsSection(brandGreen, textColorPrimary, botViewModel, onNavigateToBotStatus)
                 Spacer(modifier = Modifier.height(20.dp))
             }
             
@@ -315,7 +324,14 @@ fun SummaryMiniInfo(label: String, value: String, modifier: Modifier = Modifier)
 }
 
 @Composable
-fun QuickActionsSection(brandGreen: Color, textColor: Color) {
+fun QuickActionsSection(
+    brandGreen: Color, 
+    textColor: Color, 
+    botViewModel: BotViewModel,
+    onNavigateToBotStatus: () -> Unit
+) {
+    val isBotActive by botViewModel.isBotActive
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -325,14 +341,18 @@ fun QuickActionsSection(brandGreen: Color, textColor: Color) {
             icon = Icons.Default.Add,
             brandColor = brandGreen,
             textColor = textColor,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = { /* Navigasi Pesanan */ }
         )
         QuickActionButton(
             title = "Cek Status Bot",
             icon = Icons.Default.Share,
             brandColor = Color(0xFFF59E0B),
             textColor = textColor,
-            modifier = Modifier.weight(1f)
+            showStatusIndicator = true,
+            isStatusActive = isBotActive,
+            modifier = Modifier.weight(1f),
+            onClick = onNavigateToBotStatus
         )
     }
 }
@@ -343,9 +363,13 @@ fun QuickActionButton(
     icon: ImageVector,
     brandColor: Color,
     textColor: Color,
+    showStatusIndicator: Boolean = false,
+    isStatusActive: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -357,14 +381,67 @@ fun QuickActionButton(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(brandColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(brandColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
+                }
+                
+                // Status Indicator (Lampu Menyala)
+                if (showStatusIndicator) {
+                    val statusColor = if (isStatusActive) Color(0xFF107C42) else Color(0xFFDC3545)
+                    
+                    // Efek Animasi Denyut (Pulse)
+                    val infiniteTransition = rememberInfiniteTransition(label = "glowTransition")
+                    val alpha by infiniteTransition.animateFloat(
+                        initialValue = 0.3f,
+                        targetValue = 0.7f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "glowAlpha"
+                    )
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.6f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "glowScale"
+                    )
+
+                    Box(
+                        modifier = Modifier.padding(top = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Layer 1: Cahaya Luar (Glow)
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                                .clip(CircleShape)
+                                .background(statusColor.copy(alpha = alpha))
+                        )
+                        // Layer 2: Inti Lampu (Solid)
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(statusColor)
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = textColor)
