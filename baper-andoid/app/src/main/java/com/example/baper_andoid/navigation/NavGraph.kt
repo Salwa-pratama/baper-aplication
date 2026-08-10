@@ -10,6 +10,9 @@ import com.example.baper_andoid.ui.screen.onboarding.BaperOnboardingScreen
 import com.example.baper_andoid.ui.screen.login.LoginScreen
 import com.example.baper_andoid.ui.screen.register.RegisterScreen
 import com.example.baper_andoid.ui.screen.home.HomeScreen
+import com.example.baper_andoid.ui.screen.chat.ChatScreen
+import com.example.baper_andoid.ui.screen.chat.ChatViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.baper_andoid.R
@@ -18,6 +21,9 @@ import com.example.baper_andoid.R
 fun NavGraph(navController: NavHostController) {
     // Load Lottie composition sekali saja untuk digunakan di Splash & Onboarding
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.logo_vectorized))
+    
+    // ViewModel tunggal untuk fitur Chat (Shared)
+    val chatViewModel: ChatViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         // ... (rest of the routes)
@@ -68,11 +74,23 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.Home.route) {
             HomeScreen(
+                chatViewModel = chatViewModel,
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onNavigateToChat = { chatId ->
+                    chatViewModel.markAsRead(chatId) // Hapus badge saat dibuka
+                    navController.navigate(Screen.ChatDetail.route)
                 }
+            )
+        }
+
+        composable(Screen.ChatDetail.route) {
+            ChatScreen(
+                chatViewModel = chatViewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }
