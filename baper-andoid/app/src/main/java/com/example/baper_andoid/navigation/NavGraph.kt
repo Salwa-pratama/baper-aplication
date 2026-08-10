@@ -20,7 +20,7 @@ fun NavGraph(navController: NavHostController) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.logo_vectorized))
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
-
+        // ... (rest of the routes)
         composable(Screen.Splash.route) {
             BaperSplashScreen(
                 composition = composition,
