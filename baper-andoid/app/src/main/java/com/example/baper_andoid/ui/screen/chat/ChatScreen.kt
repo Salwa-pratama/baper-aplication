@@ -116,7 +116,7 @@ fun ChatScreen(
                         colors = TextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
-                            cursorColor = Color.Black,
+                            cursorColor = brandGreen,
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -124,8 +124,8 @@ fun ChatScreen(
                             focusedPlaceholderColor = Color.Gray,
                             unfocusedPlaceholderColor = Color.Gray,
                             selectionColors = TextSelectionColors(
-                                handleColor = Color.Black,
-                                backgroundColor = Color.Black.copy(alpha = 0.2f)
+                                handleColor = brandGreen,
+                                backgroundColor = brandGreen.copy(alpha = 0.2f)
                             )
                         ),
                         shape = RoundedCornerShape(28.dp)

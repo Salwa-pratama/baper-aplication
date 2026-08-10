@@ -12,6 +12,8 @@ import com.example.baper_andoid.ui.screen.register.RegisterScreen
 import com.example.baper_andoid.ui.screen.home.HomeScreen
 import com.example.baper_andoid.ui.screen.chat.ChatScreen
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
+import com.example.baper_andoid.ui.screen.bot.BotViewModel
+import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
@@ -24,6 +26,7 @@ fun NavGraph(navController: NavHostController) {
     
     // ViewModel tunggal untuk fitur Chat (Shared)
     val chatViewModel: ChatViewModel = viewModel()
+    val botViewModel: BotViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         // ... (rest of the routes)
@@ -75,6 +78,7 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.Home.route) {
             HomeScreen(
                 chatViewModel = chatViewModel,
+                botViewModel = botViewModel,
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
@@ -83,6 +87,9 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateToChat = { chatId ->
                     chatViewModel.markAsRead(chatId) // Hapus badge saat dibuka
                     navController.navigate(Screen.ChatDetail.route)
+                },
+                onNavigateToBotStatus = {
+                    navController.navigate(Screen.BotStatus.route)
                 }
             )
         }
@@ -90,6 +97,13 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.ChatDetail.route) {
             ChatScreen(
                 chatViewModel = chatViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.BotStatus.route) {
+            BotStatusScreen(
+                viewModel = botViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
