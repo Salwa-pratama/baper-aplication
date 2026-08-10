@@ -19,7 +19,7 @@ fun NavGraph(navController: NavHostController) {
     // Load Lottie composition sekali saja untuk digunakan di Splash & Onboarding
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.logo_vectorized))
 
-    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+    NavHost(navController = navController, startDestination = Screen.Home.route) {
 
         composable(Screen.Splash.route) {
             BaperSplashScreen(
