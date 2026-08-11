@@ -30,7 +30,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.baper_andoid.R
+import com.example.baper_andoid.data.remote.RetrofitClient
+import com.example.baper_andoid.data.repository.AuthRepository
 
 @Composable
 fun RoundedSlideButton(
@@ -114,6 +117,10 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
+    val authRepository = remember { AuthRepository(RetrofitClient.instance) }
+    val regViewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory(authRepository))
+    val state by regViewModel.registerState.collectAsState()
+
     var currentStep by remember { mutableStateOf(RegisterStep.PERSONAL_DATA) }
 
     // Step 1: Data Diri
@@ -130,19 +137,17 @@ fun RegisterScreen(
     var businessAddress by remember { mutableStateOf("") }
     var businessWhatsapp by remember { mutableStateOf("") }
 
-    // Warna Profesional (Sesuai LoginScreen)
+    // Warna Profesional
     val brandGreen = Color(0xFF107C42)
     val backgroundColor = Color(0xFFF7F9F8)
-    val textColorSecondary = Color(0xFF64748B) // Slate 500
-    val textColorPrimary = Color(0xFF0F172A)   // Slate 900
+    val textColorSecondary = Color(0xFF64748B)
+    val textColorPrimary = Color(0xFF0F172A)
 
-    // Custom Selection Colors
     val customTextSelectionColors = TextSelectionColors(
         handleColor = brandGreen,
         backgroundColor = brandGreen.copy(alpha = 0.4f)
     )
 
-    // Animasi Panah Bergerak (Maju Mundur)
     val infiniteTransition = rememberInfiniteTransition(label = "arrowTransition")
     val arrowOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -153,6 +158,12 @@ fun RegisterScreen(
         ),
         label = "arrowOffset"
     )
+
+    LaunchedEffect(state) {
+        if (state is RegisterState.Success) {
+            onRegisterSuccess()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -170,7 +181,6 @@ fun RegisterScreen(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Logo Utama
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_utama),
                 contentDescription = null,
@@ -179,7 +189,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Header Teks Dinamis
             Text(
                 text = if (currentStep == RegisterStep.PERSONAL_DATA) "Daftar Akun Baru" else "Informasi Bisnis",
                 fontSize = 32.sp,
@@ -205,7 +214,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Kartu Input Minimalis
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -232,7 +240,6 @@ fun RegisterScreen(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             if (step == RegisterStep.PERSONAL_DATA) {
-                                // --- STEP 1: DATA DIRI ---
                                 Text(
                                     text = "Nama Lengkap",
                                     fontSize = 14.sp,
@@ -384,7 +391,6 @@ fun RegisterScreen(
                                     }
                                 )
                             } else {
-                                // --- STEP 2: DATA BISNIS ---
                                 Text(
                                     text = "Nama Bisnis",
                                     fontSize = 14.sp,
@@ -496,11 +502,36 @@ fun RegisterScreen(
                                     )
                                 )
 
-                                Spacer(modifier = Modifier.height(32.dp))
+                                Spacer(modifier = Modifier.height(36.dp))
+
+                                AnimatedVisibility(
+                                    visible = state is RegisterState.Error,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    Text(
+                                        text = (state as? RegisterState.Error)?.message ?: "",
+                                        color = Color(0xFFB91C1C),
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.padding(bottom = 16.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
 
                                 RoundedSlideButton(
-                                    onClick = { onRegisterSuccess() },
+                                    onClick = {
+                                        regViewModel.register(
+                                            fullName = fullName,
+                                            email = email,
+                                            password = password,
+                                            businessName = businessName,
+                                            businessType = businessType,
+                                            businessAddress = businessAddress,
+                                            businessPhone = businessWhatsapp
+                                        )
+                                    },
                                     text = "Daftar Sekarang",
+                                    isLoading = state is RegisterState.Loading,
                                     containerColor = brandGreen
                                 )
                             }
@@ -509,7 +540,6 @@ fun RegisterScreen(
                 }
             }
 
-            // Footer Link
             Row(
                 modifier = Modifier
                     .padding(top = 16.dp, bottom = 32.dp)

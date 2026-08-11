@@ -1,39 +1,46 @@
-# Implementation Plan - Webhook (Chat) Integration
+# Implementation Plan - Auth Integration & Home Loading
 
-Implementasi fitur pengiriman pesan dan media melalui backend (Meta/WhatsApp Integration) berdasarkan spesifikasi Go backend dan Swagger.
+Menyambungkan fitur Login/Register dengan session management (DataStore) dan menambahkan loading indicator di modul Home.
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **Session Storage:** Saya akan menggunakan Jetpack DataStore di `UserPreferences.kt` untuk menyimpan token login secara aman.
+> - **Auto-Login:** Alur aplikasi akan diubah: Splash Screen -> Cek Token -> (Home jika ada, Login jika tidak ada).
+> - **Retrofit Auth:** Seluruh request ke API akan otomatis menyertakan header `Authorization: Bearer <token>` jika token tersedia.
 
 ## Proposed Changes
 
 ### [Data Layer]
 
-#### [NEW] [SendMessageRequest.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/dto/request/SendMessageRequest.kt)
-DTO untuk mengirim pesan teks.
-- `to`: String
-- `msg`: String
+#### [MODIFY] [UserPreferences.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/local/UserPreferences.kt)
+Implementasi `DataStore` untuk menyimpan dan mengambil `authToken`.
 
-#### [NEW] [SendMediaRequest.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/dto/request/SendMediaRequest.kt)
-DTO untuk mengirim media.
-- `to`: String
-- `media_url`: String
-- `type`: String (image, document, video, audio)
-- `caption`: String
+#### [MODIFY] [RetrofitClient.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/RetrofitClient.kt)
+Menambahkan `AuthInterceptor` untuk menyisipkan token ke header API secara otomatis.
 
-#### [NEW] [ChatResponse.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/dto/response/ChatResponse.kt)
-DTO response generic untuk fitur chat.
-- `status`: String
-- `message`: String
-- `data`: Any?
+### [UI Layer - Login & Register]
 
-#### [MODIFY] [ApiService.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/ApiService.kt)
-Menambahkan endpoint:
-- `POST api/webhook/send-message`
-- `POST api/webhook/send-media`
+#### [MODIFY] [LoginViewModel.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginViewModel.kt)
+Simpan token ke `UserPreferences` setelah login berhasil.
 
-#### [NEW] [ChatRepository.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/repository/ChatRepository.kt)
-Repository untuk menangani pengiriman pesan dan media.
+#### [NEW] [RegisterViewModel.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/register/RegisterViewModel.kt)
+Implementasi logika register dan error handling.
+
+### [UI Layer - Home & Navigation]
+
+#### [MODIFY] [HomeScreen.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeScreen.kt)
+Observasi `isLoading` dari `HomeViewModel` dan tampilkan `CircularProgressIndicator` di tengah layar saat data sedang dimuat.
+
+#### [MODIFY] [NavGraph.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/navigation/NavGraph.kt)
+- Ubah `startDestination` ke `Screen.Splash.route`.
+- Tambahkan logika pengecekan session di Splash Screen untuk menentukan tujuan navigasi berikutnya.
 
 ## Verification Plan
 
 ### Manual Verification
-- Verifikasi kode build dengan sukses.
-- Memastikan mapping field `@SerializedName` sudah sesuai dengan struct Go backend.
+1. Jalankan aplikasi, harus masuk ke Splash Screen.
+2. Jika belum login, harus diarahkan ke halaman Login.
+3. Coba Login dengan akun valid, pastikan diarahkan ke Home.
+4. Di Home, pastikan muncul loading indicator sebentar sebelum data tampil.
+5. Tutup dan buka kembali aplikasi, pastikan langsung masuk ke Home (Auto-login).

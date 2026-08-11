@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.baper_andoid.R
+import com.example.baper_andoid.data.local.UserPreferences
 import com.example.baper_andoid.data.remote.RetrofitClient
 import com.example.baper_andoid.data.repository.AuthRepository
 
@@ -117,8 +119,10 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
+    val context = LocalContext.current
+    val userPreferences = remember { UserPreferences(context) }
     val authRepository = remember { AuthRepository(RetrofitClient.instance) }
-    val viewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(authRepository))
+    val viewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(authRepository, userPreferences))
     val state by viewModel.loginState.collectAsState()
 
     var email by remember { mutableStateOf("") }

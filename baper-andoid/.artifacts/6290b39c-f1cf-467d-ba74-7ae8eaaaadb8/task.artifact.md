@@ -1,6 +1,7 @@
-- [x] Create `SendMessageRequest.kt`
-- [x] Create `SendMediaRequest.kt`
-- [x] Create `ChatResponse.kt`
-- [x] Update `ApiService.kt` with Chat endpoints
-- [x] Create `ChatRepository.kt`
-- [x] Verify build and imports
+- [ ] Implement `UserPreferences` (DataStore)
+- [ ] Update `RetrofitClient` with Auth Interceptor
+- [ ] Update `LoginViewModel` to save token
+- [ ] Implement `RegisterViewModel`
+- [ ] Update `NavGraph` & Splash navigation logic
+- [ ] Implement loading in `HomeScreen`
+- [ ] Verify whole flow
