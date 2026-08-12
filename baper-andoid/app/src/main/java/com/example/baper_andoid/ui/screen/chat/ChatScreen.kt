@@ -11,9 +11,9 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.baper_andoid.ui.theme.InterFamily
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,14 +36,12 @@ fun ChatScreen(
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
     var messageText by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
     
-    // State untuk daftar pesan diambil dari ViewModel
     val messages = chatViewModel.messages
-    
-    // State untuk scroll list otomatis ke bawah
     val listState = rememberLazyListState()
     
-    // Otomatis scroll ke bawah saat ada pesan baru
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -94,7 +93,6 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            // Kolom Input Pesan Mengambang
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,21 +148,32 @@ fun ChatScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(bgGray)
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                scope.launch {
+                    delay(2000)
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.padding(padding)
         ) {
-            items(messages) { message ->
-                ChatBubble(
-                    message = message.text,
-                    isUser = message.isUser,
-                    time = message.time
-                )
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(bgGray),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(messages) { message ->
+                    ChatBubble(
+                        message = message.text,
+                        isUser = message.isUser,
+                        time = message.time
+                    )
+                }
             }
         }
     }

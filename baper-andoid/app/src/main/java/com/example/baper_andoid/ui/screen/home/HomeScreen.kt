@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +43,10 @@ import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilScreen
 import com.example.baper_andoid.ui.theme.InterFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     chatViewModel: ChatViewModel,
@@ -57,6 +61,7 @@ fun HomeScreen(
     val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(homeRepository))
     val uiState by homeViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
@@ -77,36 +82,88 @@ fun HomeScreen(
                 startDestination = BottomNavItem.Beranda.route
             ) {
                 composable(BottomNavItem.Beranda.route) {
-                    if (uiState.isLoading) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color(0xFF107C42))
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
                         }
-                    } else {
-                        val name by profilViewModel.nama
-                        val imageUri by profilViewModel.profileImageUri
-                        
-                        DashboardContent(
-                            name = name,
-                            imageUri = imageUri,
-                            chatViewModel = chatViewModel,
-                            botViewModel = botViewModel,
-                            onNavigateToChat = onNavigateToChat,
-                            onNavigateToBotStatus = onNavigateToBotStatus,
-                            onNavigateToLihatPesanan = onNavigateToLihatPesanan
-                        )
+                    ) {
+                        if (uiState.isLoading) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Color(0xFF107C42))
+                            }
+                        } else {
+                            val name by profilViewModel.nama
+                            val imageUri by profilViewModel.profileImageUri
+                            
+                            DashboardContent(
+                                name = name,
+                                imageUri = imageUri,
+                                chatViewModel = chatViewModel,
+                                botViewModel = botViewModel,
+                                onNavigateToChat = onNavigateToChat,
+                                onNavigateToBotStatus = onNavigateToBotStatus,
+                                onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                            )
+                        }
                     }
                 }
                 composable(BottomNavItem.Produk.route) {
-                    PlaceholderPage(title = "Halaman Produk")
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
+                        }
+                    ) {
+                        PlaceholderPage(title = "Halaman Produk")
+                    }
                 }
                 composable(BottomNavItem.Rekap.route) {
-                    PlaceholderPage(title = "Halaman Rekap")
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
+                        }
+                    ) {
+                        PlaceholderPage(title = "Halaman Rekap")
+                    }
                 }
                 composable(BottomNavItem.Profil.route) {
-                    ProfilScreen(
-                        viewModel = profilViewModel,
-                        onLogout = onLogout
-                    )
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
+                        }
+                    ) {
+                        ProfilScreen(
+                            viewModel = profilViewModel,
+                            onLogout = onLogout
+                        )
+                    }
                 }
             }
         }
@@ -129,7 +186,6 @@ fun DashboardContent(
     val bgGray = Color(0xFFF7F9F8)
     val textColorPrimary = Color(0xFF0F172A)
     
-    // Mengambil data chat langsung dari ViewModel
     val chats = chatViewModel.chatList
     
     Column(
@@ -137,7 +193,6 @@ fun DashboardContent(
             .fillMaxSize()
             .background(bgGray)
     ) {
-        // 1. Area Header yang Tetap (Fixed)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,7 +211,6 @@ fun DashboardContent(
             )
         }
 
-        // 2. Area Konten yang bisa digulir (Scrollable)
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -202,7 +256,6 @@ fun DashboardContent(
                         color = textColorPrimary
                     )
                     
-                    // Efek Interaksi Teks (Tanpa background button)
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     
@@ -223,7 +276,6 @@ fun DashboardContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // Loop data chat dari ViewModel
             items(chats) { chat ->
                 ChatListItem(
                     chat = chat, 
@@ -427,7 +479,6 @@ fun QuickActionButton(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val brandGreen = Color(0xFF107C42)
     val interactionSource = remember { MutableInteractionSource() }
     
     Card(
@@ -465,11 +516,9 @@ fun QuickActionButton(
                         Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
                     }
                     
-                    // Status Indicator (Lampu Menyala)
                     if (showStatusIndicator) {
                         val statusColor = if (isStatusActive) Color(0xFF107C42) else Color(0xFFDC3545)
                         
-                        // Efek Animasi Denyut (Pulse)
                         val infiniteTransition = rememberInfiniteTransition(label = "glowTransition")
                         val alpha by infiniteTransition.animateFloat(
                             initialValue = 0.3f,
@@ -494,7 +543,6 @@ fun QuickActionButton(
                             modifier = Modifier.padding(top = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            // Layer 1: Cahaya Luar (Glow)
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
@@ -502,7 +550,6 @@ fun QuickActionButton(
                                     .clip(CircleShape)
                                     .background(statusColor.copy(alpha = alpha))
                             )
-                            // Layer 2: Inti Lampu (Solid)
                             Box(
                                 modifier = Modifier
                                     .size(8.dp)

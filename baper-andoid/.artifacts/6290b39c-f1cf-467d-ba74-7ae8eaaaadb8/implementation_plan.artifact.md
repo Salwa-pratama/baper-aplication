@@ -1,46 +1,29 @@
-# Implementation Plan - Auth Integration & Home Loading
+# Implementation Plan - Visual Swipe to Refresh (UI Only)
 
-Menyambungkan fitur Login/Register dengan session management (DataStore) dan menambahkan loading indicator di modul Home.
+Menerapkan komponen `PullToRefreshBox` secara visual di seluruh tab utama aplikasi (Beranda, Produk, Rekap, Profil) tanpa melakukan hit API backend terlebih dahulu.
 
 ## User Review Required
 
-> [!IMPORTANT]
-> - **Session Storage:** Saya akan menggunakan Jetpack DataStore di `UserPreferences.kt` untuk menyimpan token login secara aman.
-> - **Auto-Login:** Alur aplikasi akan diubah: Splash Screen -> Cek Token -> (Home jika ada, Login jika tidak ada).
-> - **Retrofit Auth:** Seluruh request ke API akan otomatis menyertakan header `Authorization: Bearer <token>` jika token tersedia.
+> [!NOTE]
+> - **Visual Only:** Untuk tahap ini, saat user men-swipe layar, indikator loading (circle) akan muncul selama 2 detik lalu menghilang. Tidak ada data yang benar-benar diperbarui dari backend.
+> - **Integration:** Logika integrasi dengan API sesungguhnya akan dilakukan di tahap berikutnya setelah tampilan visual ini kamu setujui.
 
 ## Proposed Changes
 
-### [Data Layer]
-
-#### [MODIFY] [UserPreferences.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/local/UserPreferences.kt)
-Implementasi `DataStore` untuk menyimpan dan mengambil `authToken`.
-
-#### [MODIFY] [RetrofitClient.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/data/remote/RetrofitClient.kt)
-Menambahkan `AuthInterceptor` untuk menyisipkan token ke header API secara otomatis.
-
-### [UI Layer - Login & Register]
-
-#### [MODIFY] [LoginViewModel.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/login/LoginViewModel.kt)
-Simpan token ke `UserPreferences` setelah login berhasil.
-
-#### [NEW] [RegisterViewModel.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/register/RegisterViewModel.kt)
-Implementasi logika register dan error handling.
-
-### [UI Layer - Home & Navigation]
+### [UI Layer]
 
 #### [MODIFY] [HomeScreen.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/ui/screen/home/HomeScreen.kt)
-Observasi `isLoading` dari `HomeViewModel` dan tampilkan `CircularProgressIndicator` di tengah layar saat data sedang dimuat.
+Membungkus seluruh konten tab utama dengan `PullToRefreshBox`.
+- **Tab Beranda:** Membungkus `DashboardContent`.
+- **Tab Produk & Rekap:** Membungkus `PlaceholderPage`.
+- **Tab Profil:** Membungkus `ProfilScreen`.
 
-#### [MODIFY] [NavGraph.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/navigation/NavGraph.kt)
-- Ubah `startDestination` ke `Screen.Splash.route`.
-- Tambahkan logika pengecekan session di Splash Screen untuk menentukan tujuan navigasi berikutnya.
+Implementasi akan menggunakan state lokal `remember { mutableStateOf(false) }` untuk simulasi loading.
 
 ## Verification Plan
 
 ### Manual Verification
-1. Jalankan aplikasi, harus masuk ke Splash Screen.
-2. Jika belum login, harus diarahkan ke halaman Login.
-3. Coba Login dengan akun valid, pastikan diarahkan ke Home.
-4. Di Home, pastikan muncul loading indicator sebentar sebelum data tampil.
-5. Tutup dan buka kembali aplikasi, pastikan langsung masuk ke Home (Auto-login).
+- Buka aplikasi dan masuk ke Dashboard.
+- Swipe down di halaman Beranda, pastikan circle loading muncul.
+- Pindah ke tab Produk, Rekap, dan Profil, lakukan hal yang sama.
+- Pastikan circle loading menghilang secara otomatis setelah 2 detik.

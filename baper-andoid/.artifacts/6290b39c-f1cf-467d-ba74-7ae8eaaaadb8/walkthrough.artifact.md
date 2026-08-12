@@ -1,24 +1,30 @@
-# Walkthrough - Navigation & Compose Fix
+# Walkthrough - Visual Swipe to Refresh Implementation
 
-Berhasil memperbaiki 14 error kompilasi pada `NavGraph.kt` dan menyelaraskan versi library agar project lebih stabil.
+Fitur visual Swipe to Refresh (Pull-to-refresh) telah berhasil diimplementasikan di seluruh halaman utama aplikasi menggunakan komponen resmi Material 3.
 
 ## Perubahan Utama
 
-### 1. Perbaikan Syntax [NavGraph.kt](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/src/main/java/com/example/baper_andoid/navigation/NavGraph.kt)
-Library Navigation Compose versi 2.8+ mewajibkan lambda `composable` menerima parameter (untuk mendukung Predictive Back & Animations).
-- Menambahkan parameter `_ ->` pada setiap blok `composable { ... }`.
+### 1. Implementasi PullToRefreshBox
+Saya telah membungkus konten di setiap tab dan halaman detail dengan komponen `PullToRefreshBox` dari library `androidx.compose.material3.pulltorefresh`.
 
-### 2. Standarisasi Library di [libs.versions.toml](file:///media/pratama/Data1/FTI/baper/baper-andoid/gradle/libs.versions.toml)
-- Menyatukan versi `lifecycle` ke `2.8.7`.
-- Menambahkan `navigationCompose = "2.8.7"` untuk memastikan stabilitas.
-- Mengupdate `activityCompose` ke `1.10.0`.
+Halaman yang telah dipasang fitur ini:
+- **Tab Beranda:** Dashboard statistik dan daftar obrolan.
+- **Tab Produk:** Halaman daftar produk (placeholder).
+- **Tab Rekap:** Halaman rekapitulasi (placeholder).
+- **Tab Profil:** Halaman pengaturan profil user.
+- **Halaman Detail Chat:** Daftar pesan di dalam percakapan.
+- **Halaman Status Bot:** Pengaturan karakteristik dan API Key bot.
 
-### 3. Cleanup [app/build.gradle.kts](file:///media/pratama/Data1/FTI/baper/baper-andoid/app/build.gradle.kts)
-- Menghapus hardcoded string versi dan menggantinya dengan referensi dari `libs.versions.toml` (Version Catalog).
+### 2. Simulasi Visual (UI Only)
+Sesuai permintaan, saat ini belum ada proses pemanggilan API backend yang sebenarnya.
+- **Trigger:** Tarik layar ke bawah.
+- **Behavior:** Lingkaran loading (refresh indicator) akan muncul selama **2 detik**.
+- **Completion:** Indikator akan hilang secara otomatis setelah delay selesai.
 
 ## Verifikasi yang Dilakukan
-- **Build Success:** Menjalankan `:app:assembleDebug` dan berhasil tanpa error.
-- **Sync Success:** Sinkronisasi Gradle berjalan lancar tanpa konflik classpath.
+- **Build Success:** Menjalankan `:app:assembleDebug` dan berhasil.
+- **API Check:** Memastikan penggunaan package `androidx.compose.material3.pulltorefresh` yang sesuai dengan versi library di project.
+- **State Scoping:** Setiap tab memiliki state `isRefreshing` sendiri, sehingga refresh di satu tab tidak mempengaruhi tab lainnya.
 
-> [!NOTE]
-> Jika kamu masih melihat warna merah pada `R.raw.logo_vectorized` di editor, abaikan saja atau lakukan **Build -> Rebuild Project**. Itu hanya masalah indexing Android Studio (False Positive) karena hasil build aslinya sudah sukses.
+> [!TIP]
+> Nantinya, kamu tinggal mengganti blok `delay(2000)` di dalam fungsi `onRefresh` dengan panggilan fungsi `viewModel.refreshData()` untuk menghubungkannya ke backend Go kamu.

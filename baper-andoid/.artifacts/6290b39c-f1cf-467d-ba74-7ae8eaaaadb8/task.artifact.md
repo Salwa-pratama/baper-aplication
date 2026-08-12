@@ -1,7 +1,10 @@
-- [ ] Implement `UserPreferences` (DataStore)
-- [ ] Update `RetrofitClient` with Auth Interceptor
-- [ ] Update `LoginViewModel` to save token
-- [ ] Implement `RegisterViewModel`
-- [ ] Update `NavGraph` & Splash navigation logic
-- [ ] Implement loading in `HomeScreen`
-- [ ] Verify whole flow
+- [x] Analyze tab structure in `HomeScreen.kt`
+- [x] Implement visual PullToRefresh in `HomeScreen.kt`
+    - [x] Add `PullToRefreshBox` to Beranda tab
+    - [x] Add `PullToRefreshBox` to Produk tab
+    - [x] Add `PullToRefreshBox` to Rekap tab
+    - [x] Add `PullToRefreshBox` to Profil tab
+- [x] Implement visual PullToRefresh in other screens
+    - [x] Add `PullToRefreshBox` to `ChatScreen.kt`
+    - [x] Add `PullToRefreshBox` to `BotStatusScreen.kt`
+- [x] Verify visual refresh behavior (Build SUCCESS)
