@@ -13,6 +13,7 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -97,11 +98,18 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 
 	msg := change.Value.Messages[0]
 	phone := change.Value.Metadata
-	contact := change.Value.Contacts[0]
+
+	// Contacts bisa kosong pada beberapa jenis event webhook.
+	// Tanpa cek panjang array, baris ini panic index out of range —
+	// dan panic di dalam goroutine mematikan SELURUH proses server.
+	customerName := ""
+	if len(change.Value.Contacts) > 0 {
+		customerName = change.Value.Contacts[0].Profile.Name
+	}
 
 	log.Printf("Pesan dari : %s", msg.From)
 	log.Printf("Isi pesan : %s", msg.Text.Body)
-	log.Printf("Nama Customer : %s", contact.Profile.Name)
+	log.Printf("Nama Customer : %s", customerName)
 
 	// 1. Dapatkan Bot dari PhoneNumberID (Nomor WhatsApp Business)
 	bot, err := s.repo.FindBotByBusinessPhone(phone.PhoneNumberID)
@@ -114,18 +122,25 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		}, err
 	}
 
-	// 2. Dapatkan Customer, jika belum ada maka Create
-	customer, errCust := s.repo.FindCustomerByPhone(msg.From)
+	// 2. Dapatkan Customer dalam scope bisnis ini, jika belum ada maka Create.
+	// Scope business_id penting: nomor WA yang sama bisa jadi customer di
+	// dua bisnis berbeda, dan datanya tidak boleh tertukar.
+	customer, errCust := s.repo.FindCustomerByPhoneAndBusiness(msg.From, bot.BusinessID)
 	if errCust != nil {
 		// Asumsi error karena tidak ketemu (gorm.ErrRecordNotFound)
-		log.Printf("Customer %s belum ada, membuat baru...", msg.From)
+		log.Printf("Customer %s belum ada di bisnis ini, membuat baru...", msg.From)
 		customer = &models.Customer{
 			BusinessID:    bot.BusinessID,
 			WaPhoneNumber: msg.From,
-			Name:          contact.Profile.Name,
+			Name:          customerName,
 		}
 		if errCreate := s.repo.CreateCustomer(customer); errCreate != nil {
 			log.Printf("Gagal membuat customer: %v", errCreate)
+			return Response{
+				Status:  "error",
+				Message: "Gagal menyiapkan data customer",
+				Data:    nil,
+			}, errCreate
 		}
 	} else {
 		log.Printf("Customer %s sudah ada (ID: %s)", msg.From, customer.ID)
@@ -143,6 +158,11 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		}
 		if errSession := s.repo.SaveChatSession(session); errSession != nil {
 			log.Printf("Gagal membuat chat session: %v", errSession)
+			return Response{
+				Status:  "error",
+				Message: "Gagal menyiapkan chat session",
+				Data:    nil,
+			}, errSession
 		}
 	} else {
 		log.Printf("Menggunakan chat session aktif (ID: %s)", session.ID)
@@ -171,6 +191,14 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 	// 🔥 FAST-ACK: Jalankan AI dan pemrosesan order di Goroutine (Background)
 	// Agar webhook langsung me-return 200 OK ke Meta dan mencegah Meta melakukan retry timeout.
 	go func(botData *models.Bot, customerData *models.Customer, sessionData *models.ChatSession, msgBody string, senderPhone string) {
+		// Panic di dalam goroutine TIDAK bisa ditangkap oleh Recover middleware
+		// Fiber — tanpa recover di sini, satu panic mematikan seluruh proses.
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("PANIC saat memproses pesan di background: %v\n%s", r, debug.Stack())
+			}
+		}()
+
 		// Fetch History
 		historyMsgs, _ := s.repo.GetRecentMessages(sessionData.ID, 10)
 
@@ -195,54 +223,38 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 			jsonEnd := strings.Index(content[jsonStart+7:], "```")
 			if jsonEnd != -1 {
 				jsonStr := content[jsonStart+7 : jsonStart+7+jsonEnd]
-				
-				var orderPayload struct {
-					IsOrderFinal bool `json:"is_order_final"`
-					Items []struct {
-						ProductID string `json:"product_id"`
-						Qty int `json:"qty"`
-					} `json:"items"`
-				}
-				
-				if err := json.Unmarshal([]byte(jsonStr), &orderPayload); err == nil && orderPayload.IsOrderFinal {
-					// Create Order
-					var orderTotal float64
-					var orderItems []models.OrderItem
-					for _, item := range orderPayload.Items {
-						// find price
-						var price float64
-						for _, p := range products {
-							if p.ID == item.ProductID {
-								price = p.Price
-								break
-							}
-						}
-						orderItems = append(orderItems, models.OrderItem{
-							ProductID: item.ProductID,
-							Quantity: item.Qty,
-							Price:    price,
-						})
-						orderTotal += price * float64(item.Qty)
-					}
 
-					if len(orderItems) > 0 {
+				var orderPayload AIOrderPayload
+
+				if err := json.Unmarshal([]byte(jsonStr), &orderPayload); err == nil && orderPayload.IsOrderFinal {
+					// Validasi keras terhadap output AI (lihat order_validation.go).
+					orderItems, errValid := BuildOrderItems(products, orderPayload.Items)
+					if errValid != nil {
+						log.Printf("Order AI ditolak: %v", errValid)
+					} else {
 						sessIDStr := sessionData.ID
 						newOrder := &models.Order{
 							CustomerID: customerData.ID,
 							BusinessID: botData.BusinessID,
-							SessionID: &sessIDStr,
-							TotalAmount: orderTotal,
-							Status: models.OrderStatusUnpaid, // Sesuai model OrderStatus baru
+							SessionID:  &sessIDStr,
+							// TotalAmount dihitung ulang oleh repository dari harga DB.
+							Status: models.OrderStatusUnpaid,
 						}
-						
+
+						// SaveOrder mengunci stok, menolak jika kurang, lalu
+						// mengurangi stok dalam satu transaksi.
 						if err := s.repo.SaveOrder(newOrder, orderItems); err != nil {
-							log.Printf("Gagal menyimpan auto order: %v", err)
+							if errors.Is(err, ErrStokKurang) {
+								log.Printf("Order dibatalkan, stok tidak cukup: %v", err)
+							} else {
+								log.Printf("Gagal menyimpan auto order: %v", err)
+							}
 						} else {
-							log.Printf("Berhasil membuat auto order dengan ID: %s", newOrder.ID)
+							log.Printf("Berhasil membuat auto order dengan ID: %s (total %.2f)", newOrder.ID, newOrder.TotalAmount)
 						}
 					}
 				}
-				
+
 				// Remove the JSON part from the response sent to user
 				cleanContent = strings.TrimSpace(content[:jsonStart] + content[jsonStart+7+jsonEnd+3:])
 			}

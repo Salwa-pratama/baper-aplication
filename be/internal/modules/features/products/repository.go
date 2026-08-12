@@ -8,6 +8,9 @@ import (
 )
 
 type Repository interface {
+	// FindBusinessByUserID dipakai untuk menentukan business_id dari JWT,
+	// bukan dari body request (mencegah user menulis ke bisnis orang lain).
+	FindBusinessByUserID(ctx context.Context, userID string) (*models.Business, error)
 	CreateProduct(ctx context.Context, product *models.Product) error
 	FindAllProducts(ctx context.Context, businessID string) ([]models.Product, error)
 	FindProductByID(ctx context.Context, id string) (*models.Product, error)
@@ -23,6 +26,15 @@ func NewProductRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
+func (r *repository) FindBusinessByUserID(ctx context.Context, userID string) (*models.Business, error) {
+	var business models.Business
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&business).Error
+	if err != nil {
+		return nil, err
+	}
+	return &business, nil
+}
+
 func (r *repository) CreateProduct(ctx context.Context, product *models.Product) error {
 	return r.db.WithContext(ctx).Create(product).Error
 }
@@ -30,7 +42,7 @@ func (r *repository) CreateProduct(ctx context.Context, product *models.Product)
 func (r *repository) FindAllProducts(ctx context.Context, businessID string) ([]models.Product, error) {
 	var products []models.Product
 	query := r.db.WithContext(ctx)
-	
+
 	if businessID != "" {
 		query = query.Where("business_id = ?", businessID)
 	}

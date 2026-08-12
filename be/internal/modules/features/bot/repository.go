@@ -8,6 +8,9 @@ import (
 
 type Repository interface {
 	FindByID(id string) (*models.Bot, error)
+	// FindBusinessByUserID dipakai untuk memverifikasi bahwa bot yang
+	// dimanipulasi benar-benar milik bisnis user yang sedang login.
+	FindBusinessByUserID(userID string) (*models.Business, error)
 	UpdateActiveStatus(id string, isActive bool) error
 	UpdateBotPrompt(id string, req UpdateBotPromptRequest) error
 }
@@ -27,6 +30,15 @@ func (r *repository) FindByID(id string) (*models.Bot, error) {
 		return nil, err
 	}
 	return &bot, nil
+}
+
+func (r *repository) FindBusinessByUserID(userID string) (*models.Business, error) {
+	var business models.Business
+	err := r.db.Where("user_id = ?", userID).First(&business).Error
+	if err != nil {
+		return nil, err
+	}
+	return &business, nil
 }
 
 func (r *repository) UpdateActiveStatus(id string, isActive bool) error {

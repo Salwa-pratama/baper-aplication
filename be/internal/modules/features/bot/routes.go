@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"baper/internal/middleware"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -10,7 +12,8 @@ func InitRoutes(app fiber.Router, db *gorm.DB) {
 	service := NewBotService(repo)
 	controller := NewBotController(service)
 
-	botRoutes := app.Group("/bots")
+	// Semua endpoint bot wajib token — sebelumnya terbuka untuk publik.
+	botRoutes := app.Group("/bots", middleware.AuthMiddleware())
 	botRoutes.Patch("/:id/toggle", controller.ToggleBotStatus)
 	botRoutes.Put("/:id/prompt", controller.UpdateBotPrompt)
 }

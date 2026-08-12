@@ -3,11 +3,13 @@ package chat
 import (
 	"baper/internal/models"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
 	"google.golang.org/genai"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Repository interface {
@@ -15,10 +17,14 @@ type Repository interface {
 	SaveMessage(message *models.Message) error
 	FindBotByBusinessPhone(phone string) (*models.Bot, error)
 	FindCustomerByPhone(phone string) (*models.Customer, error)
+	FindCustomerByPhoneAndBusiness(phone, businessID string) (*models.Customer, error)
 	CreateCustomer(customer *models.Customer) error
 	FindActiveChatSession(botID, customerID string) (*models.ChatSession, error)
 	GetRecentMessages(sessionID string, limit int) ([]models.Message, error)
 	GetProductsByBusinessID(businessID string) ([]models.Product, error)
+	// SaveOrder menyimpan order + item DAN mengurangi stok dalam satu
+	// transaksi. Stok dikunci (SELECT ... FOR UPDATE) supaya dua pesanan
+	// bersamaan tidak bisa membuat stok jadi minus.
 	SaveOrder(order *models.Order, items []models.OrderItem) error
 	GenerateContent(botPrompt string, historyMsgs []models.Message, productCatalog string, prompt string) (string, error)
 }
@@ -85,7 +91,7 @@ Jika pembeli FIX/DEAL memesan produk, KELUARKAN RESPONS JSON SPESIFIK SAJA di ak
 			Parts: []*genai.Part{{Text: msg.Content}},
 		})
 	}
-	
+
 	// Add current prompt
 	contents = append(contents, &genai.Content{
 		Role:  "user",
@@ -124,6 +130,18 @@ func (r *repository) FindCustomerByPhone(phone string) (*models.Customer, error)
 	return &customer, nil
 }
 
+// FindCustomerByPhoneAndBusiness mencari customer dalam scope satu bisnis.
+// Tanpa scope business_id, nomor WhatsApp yang sama pada dua bisnis berbeda
+// akan saling tertukar datanya.
+func (r *repository) FindCustomerByPhoneAndBusiness(phone, businessID string) (*models.Customer, error) {
+	var customer models.Customer
+	err := r.db.Where("wa_phone_number = ? AND business_id = ?", phone, businessID).First(&customer).Error
+	if err != nil {
+		return nil, err
+	}
+	return &customer, nil
+}
+
 func (r *repository) CreateCustomer(customer *models.Customer) error {
 	return r.db.Create(customer).Error
 }
@@ -149,8 +167,60 @@ func (r *repository) GetProductsByBusinessID(businessID string) ([]models.Produc
 	return prods, err
 }
 
+// ErrStokKurang dikembalikan jika stok tidak cukup saat order dibuat.
+var ErrStokKurang = errors.New("stok tidak cukup")
+
+// SaveOrder menyimpan order + item DAN mengurangi stok, semuanya dalam satu
+// transaksi. Baris produk dikunci dengan SELECT ... FOR UPDATE agar dua
+// pesanan yang datang bersamaan tidak bisa menembus stok jadi negatif.
+// Kalau ada satu item yang stoknya kurang, SELURUH order dibatalkan (rollback).
 func (r *repository) SaveOrder(order *models.Order, items []models.OrderItem) error {
+	if len(items) == 0 {
+		return errors.New("order tanpa item")
+	}
+
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Kunci + validasi + kurangi stok tiap item lebih dulu.
+		for i := range items {
+			if items[i].Quantity <= 0 {
+				return fmt.Errorf("qty tidak valid untuk produk %s", items[i].ProductID)
+			}
+
+			var product models.Product
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("id = ?", items[i].ProductID).
+				First(&product).Error; err != nil {
+				return fmt.Errorf("produk %s tidak ditemukan: %w", items[i].ProductID, err)
+			}
+
+			// Produk harus milik bisnis yang sama dengan order.
+			if product.BusinessID != order.BusinessID {
+				return fmt.Errorf("produk %s bukan milik bisnis ini", items[i].ProductID)
+			}
+
+			if product.Stock < items[i].Quantity {
+				return fmt.Errorf("%w: produk %s sisa %d, diminta %d",
+					ErrStokKurang, product.Name, product.Stock, items[i].Quantity)
+			}
+
+			// Harga selalu diambil dari DB, bukan dari input AI/klien.
+			items[i].Price = product.Price
+
+			if err := tx.Model(&models.Product{}).
+				Where("id = ?", product.ID).
+				Update("stock", gorm.Expr("stock - ?", items[i].Quantity)).Error; err != nil {
+				return err
+			}
+		}
+
+		// 2. Hitung ulang total dari harga DB, jangan percaya hitungan AI.
+		var total float64
+		for i := range items {
+			total += items[i].Price * float64(items[i].Quantity)
+		}
+		order.TotalAmount = total
+
+		// 3. Baru simpan order + item-nya.
 		if err := tx.Create(order).Error; err != nil {
 			return err
 		}

@@ -1,12 +1,16 @@
 package bot
 
 import (
+	"baper/internal/common/apperror"
+	"baper/internal/models"
 	"errors"
+
+	"gorm.io/gorm"
 )
 
 type Service interface {
-	ToggleBotStatus(botID string) (map[string]interface{}, error)
-	UpdateBotPrompt(botID string, req UpdateBotPromptRequest) (map[string]interface{}, error)
+	ToggleBotStatus(userID string, botID string) (map[string]interface{}, error)
+	UpdateBotPrompt(userID string, botID string, req UpdateBotPromptRequest) (map[string]interface{}, error)
 }
 
 type service struct {
@@ -17,17 +21,46 @@ func NewBotService(repo Repository) Service {
 	return &service{repo}
 }
 
-func (s *service) ToggleBotStatus(botID string) (map[string]interface{}, error) {
+// findOwnedBot mengambil bot HANYA jika bot itu milik bisnis user yang login.
+// Bot orang lain dijawab 404 supaya tidak membocorkan keberadaannya.
+func (s *service) findOwnedBot(userID, botID string) (*models.Bot, error) {
+	if userID == "" {
+		return nil, apperror.Unauthorized("user tidak dikenali")
+	}
+
+	business, err := s.repo.FindBusinessByUserID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NotFound("Bisnis tidak ditemukan untuk user ini")
+		}
+		return nil, apperror.Internal("Gagal mengambil data bisnis")
+	}
+
 	bot, err := s.repo.FindByID(botID)
-	if err != nil || bot == nil {
-		return nil, errors.New("bot tidak ditemukan")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NotFound("Bot tidak ditemukan")
+		}
+		return nil, apperror.Internal("Gagal mengambil data bot")
+	}
+
+	if bot.BusinessID != business.ID {
+		return nil, apperror.NotFound("Bot tidak ditemukan")
+	}
+
+	return bot, nil
+}
+
+func (s *service) ToggleBotStatus(userID string, botID string) (map[string]interface{}, error) {
+	bot, err := s.findOwnedBot(userID, botID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Toggle status
 	newStatus := !bot.IsActive
-	err = s.repo.UpdateActiveStatus(botID, newStatus)
-	if err != nil {
-		return nil, errors.New("gagal memperbarui status bot")
+	if err := s.repo.UpdateActiveStatus(bot.ID, newStatus); err != nil {
+		return nil, apperror.Internal("Gagal memperbarui status bot")
 	}
 
 	return map[string]interface{}{
@@ -36,15 +69,14 @@ func (s *service) ToggleBotStatus(botID string) (map[string]interface{}, error) 
 	}, nil
 }
 
-func (s *service) UpdateBotPrompt(botID string, req UpdateBotPromptRequest) (map[string]interface{}, error) {
-	bot, err := s.repo.FindByID(botID)
-	if err != nil || bot == nil {
-		return nil, errors.New("bot tidak ditemukan")
+func (s *service) UpdateBotPrompt(userID string, botID string, req UpdateBotPromptRequest) (map[string]interface{}, error) {
+	bot, err := s.findOwnedBot(userID, botID)
+	if err != nil {
+		return nil, err
 	}
 
-	err = s.repo.UpdateBotPrompt(botID, req)
-	if err != nil {
-		return nil, errors.New("gagal memperbarui prompt bot")
+	if err := s.repo.UpdateBotPrompt(bot.ID, req); err != nil {
+		return nil, apperror.Internal("Gagal memperbarui prompt bot")
 	}
 
 	return map[string]interface{}{
