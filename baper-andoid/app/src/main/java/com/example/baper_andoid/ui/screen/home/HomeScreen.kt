@@ -37,7 +37,7 @@ import com.example.baper_andoid.data.remote.RetrofitClient
 import com.example.baper_andoid.data.repository.HomeRepository
 import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
-import com.example.baper_andoid.ui.screen.chat.BaperChat
+import com.example.baper_andoid.data.remote.dto.response.ConversationItem
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
@@ -90,10 +90,11 @@ fun HomeScreen(
                         isRefreshing = isRefreshing,
                         onRefresh = {
                             isRefreshing = true
-                            scope.launch {
-                                delay(2000)
+                            chatViewModel.fetchConversations(onComplete = {
                                 isRefreshing = false
-                            }
+                            })
+                            // Juga refresh dashboard stats jika ada
+                            homeViewModel.refreshData()
                         }
                     ) {
                         if (uiState.isLoading) {
@@ -192,6 +193,10 @@ fun DashboardContent(
     
     val chats = chatViewModel.chatList
     
+    LaunchedEffect(Unit) {
+        chatViewModel.fetchConversations()
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -284,7 +289,10 @@ fun DashboardContent(
                 ChatListItem(
                     chat = chat, 
                     textColor = textColorPrimary, 
-                    onClick = { onNavigateToChat(chat.id) }
+                    onClick = { 
+                        chatViewModel.setActiveConversation(chat)
+                        onNavigateToChat(chat.sessionId) 
+                    }
                 )
             }
         }
@@ -571,7 +579,7 @@ fun QuickActionButton(
 }
 
 @Composable
-fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
+fun ChatListItem(chat: ConversationItem, textColor: Color, onClick: () -> Unit) {
     val brandGreen = Color(0xFF107C42)
     val interactionSource = remember { MutableInteractionSource() }
     
@@ -620,7 +628,7 @@ fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = chat.name,
+                        text = chat.customerName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         fontFamily = InterFamily,
@@ -651,41 +659,14 @@ fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    // Simple formatting for time
+                    val displayTime = chat.lastMessageAt?.take(10) ?: ""
                     Text(
-                        text = chat.time,
+                        text = displayTime,
                         fontSize = 11.sp,
                         fontFamily = InterFamily,
                         color = Color(0xFF94A3B8)
                     )
-                    
-                    if (chat.unreadCount > 0) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(brandGreen),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = chat.unreadCount.toString(),
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = InterFamily,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                style = androidx.compose.ui.text.TextStyle(
-                                    platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                                        includeFontPadding = false
-                                    ),
-                                    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
-                                        alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
-                                        trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both
-                                    )
-                                )
-                            )
-                        }
-                    }
                 }
             }
         }

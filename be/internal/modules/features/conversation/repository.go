@@ -133,9 +133,15 @@ func (r *repository) ListMessagesBySession(ctx context.Context, sessionID string
 	var msgs []models.Message
 	err := r.db.WithContext(ctx).
 		Where("session_id = ?", sessionID).
-		Order("created_at ASC").
+		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&msgs).Error
+	
+	// Reverse the slice so the oldest of the latest messages comes first
+	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
+		msgs[i], msgs[j] = msgs[j], msgs[i]
+	}
+	
 	return msgs, err
 }

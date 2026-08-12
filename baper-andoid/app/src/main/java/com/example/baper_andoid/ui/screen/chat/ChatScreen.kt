@@ -26,22 +26,58 @@ import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
+import java.text.SimpleDateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     chatViewModel: ChatViewModel,
+    sessionId: String,
     onBack: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
     var messageText by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     
     val messages = chatViewModel.messages
+    val customerName by chatViewModel.currentCustomerName.collectAsState()
     val listState = rememberLazyListState()
+
+    fun formatUtcToLocal(utcTime: String): String {
+        return try {
+            // Remove fractional seconds if they exist for easier parsing with basic SimpleDateFormat
+            var cleanedString = utcTime
+            if (cleanedString.contains(".")) {
+                cleanedString = cleanedString.substringBefore(".") + "Z"
+            }
+            if (!cleanedString.endsWith("Z") && !cleanedString.contains("+")) {
+                cleanedString += "Z"
+            }
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            val date = format.parse(cleanedString) ?: return utcTime.take(16)
+            
+            val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            outputFormat.timeZone = TimeZone.getDefault()
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            if (utcTime.length >= 16) utcTime.substring(11, 16) else utcTime
+        }
+    }
     
+    LaunchedEffect(sessionId) {
+        if (sessionId.isNotEmpty()) {
+            chatViewModel.fetchMessages(sessionId)
+            
+            // Auto-polling setiap 5 detik untuk mensimulasikan real-time
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                chatViewModel.fetchMessages(sessionId)
+            }
+        }
+    }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -65,7 +101,7 @@ fun ChatScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "BAPER Assistant",
+                                text = customerName.ifEmpty { "Memuat..." },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = InterFamily,
@@ -132,7 +168,7 @@ fun ChatScreen(
                     FloatingActionButton(
                         onClick = { 
                             if (messageText.isNotBlank()) {
-                                chatViewModel.sendMessage(messageText)
+                                chatViewModel.sendMessage(messageText, sessionId)
                                 messageText = ""
                             }
                         },
@@ -152,12 +188,13 @@ fun ChatScreen(
             isRefreshing = isRefreshing,
             onRefresh = {
                 isRefreshing = true
-                scope.launch {
-                    delay(2000)
+                chatViewModel.fetchMessages(sessionId, onComplete = {
                     isRefreshing = false
-                }
+                })
             },
-            modifier = Modifier.padding(padding)
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
         ) {
             LazyColumn(
                 state = listState,
@@ -168,10 +205,13 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(messages) { message ->
+                    val isUser = message.senderType != "customer"
+                    // Format time simply
+                    val displayTime = formatUtcToLocal(message.createdAt)
                     ChatBubble(
-                        message = message.text,
-                        isUser = message.isUser,
-                        time = message.time
+                        message = message.content,
+                        isUser = isUser,
+                        time = displayTime
                     )
                 }
             }

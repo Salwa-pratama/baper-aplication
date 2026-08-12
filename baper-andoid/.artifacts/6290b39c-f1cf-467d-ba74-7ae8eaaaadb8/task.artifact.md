@@ -1,10 +1,4 @@
-- [x] Analyze tab structure in `HomeScreen.kt`
-- [x] Implement visual PullToRefresh in `HomeScreen.kt`
-    - [x] Add `PullToRefreshBox` to Beranda tab
-    - [x] Add `PullToRefreshBox` to Produk tab
-    - [x] Add `PullToRefreshBox` to Rekap tab
-    - [x] Add `PullToRefreshBox` to Profil tab
-- [x] Implement visual PullToRefresh in other screens
-    - [x] Add `PullToRefreshBox` to `ChatScreen.kt`
-    - [x] Add `PullToRefreshBox` to `BotStatusScreen.kt`
-- [x] Verify visual refresh behavior (Build SUCCESS)
+- [ ] Update `ChatViewModel.kt` for instant data set and list synchronization
+- [ ] Update `HomeScreen.kt` to pass conversation data on click
+- [ ] Update `ChatScreen.kt` for dynamic header and auto-polling
+- [ ] Verify build and functionality

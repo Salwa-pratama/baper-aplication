@@ -17,6 +17,9 @@ import com.example.baper_andoid.ui.screen.register.RegisterScreen
 import com.example.baper_andoid.ui.screen.home.HomeScreen
 import com.example.baper_andoid.ui.screen.chat.ChatScreen
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
+import com.example.baper_andoid.ui.screen.chat.ChatViewModelFactory
+import com.example.baper_andoid.data.repository.ChatRepository
+import com.example.baper_andoid.data.remote.RetrofitClient
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
@@ -36,7 +39,8 @@ fun NavGraph(navController: NavHostController) {
     
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.logo_vectorized))
     
-    val chatViewModel: ChatViewModel = viewModel()
+    val chatRepository = remember { ChatRepository(RetrofitClient.getInstance(context)) }
+    val chatViewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(chatRepository))
     val botViewModel: BotViewModel = viewModel()
     val profilViewModel: ProfilViewModel = viewModel()
     val lihatPesananViewModel: LihatPesananViewModel = viewModel()
@@ -112,7 +116,7 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToChat = { chatId ->
                     chatViewModel.markAsRead(chatId)
-                    navController.navigate(Screen.ChatDetail.route)
+                    navController.navigate(Screen.ChatDetail.createRoute(chatId))
                 },
                 onNavigateToBotStatus = {
                     navController.navigate(Screen.BotStatus.route)
@@ -126,9 +130,14 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.ChatDetail.route) { _ ->
+        composable(
+            route = Screen.ChatDetail.route,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
             ChatScreen(
                 chatViewModel = chatViewModel,
+                sessionId = sessionId,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -156,7 +165,7 @@ fun NavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() },
                 onNavigateToChat = { chatId ->
                     chatViewModel.markAsRead(chatId)
-                    navController.navigate(Screen.ChatDetail.route)
+                    navController.navigate(Screen.ChatDetail.createRoute(chatId))
                 }
             )
         }
@@ -171,7 +180,7 @@ fun NavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() },
                 onNavigateToChat = { chatId ->
                     chatViewModel.markAsRead(chatId)
-                    navController.navigate(Screen.ChatDetail.route)
+                    navController.navigate(Screen.ChatDetail.createRoute(chatId))
                 }
             )
         }
