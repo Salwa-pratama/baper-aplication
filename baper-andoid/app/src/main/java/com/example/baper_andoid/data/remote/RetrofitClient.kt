@@ -14,8 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // Ganti sesuai IP server Anda saat development.
-    private const val BASE_URL = "http://192.168.1.8:3000/api/"
+    private const val BASE_URL = "http://192.168.1.4:3000/api/"
 
     private fun loggingInterceptor() = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
