@@ -28,6 +28,7 @@ import com.example.baper_andoid.ui.theme.InterFamily
 @Composable
 fun LihatPesananScreen(
     viewModel: LihatPesananViewModel,
+    initialTab: Int = 0,
     onBack: () -> Unit,
     onNavigateToChat: (String) -> Unit
 ) {
@@ -36,7 +37,7 @@ fun LihatPesananScreen(
     val textColorPrimary = Color(0xFF0F172A)
     val textColorSecondary = Color(0xFF64748B)
     
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab) }
     val tabs = listOf("Belum Bayar", "Sudah Lunas")
 
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -221,10 +222,14 @@ fun OrderCard(
     onClick: () -> Unit,
     onConfirmClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple(color = Color.Gray)
+            ) { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
