@@ -50,7 +50,8 @@ fun HomeScreen(
     profilViewModel: ProfilViewModel,
     onLogout: () -> Unit,
     onNavigateToChat: (String) -> Unit,
-    onNavigateToBotStatus: () -> Unit
+    onNavigateToBotStatus: () -> Unit,
+    onNavigateToLihatPesanan: () -> Unit
 ) {
     val context = LocalContext.current
     val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
@@ -90,7 +91,8 @@ fun HomeScreen(
                             chatViewModel = chatViewModel,
                             botViewModel = botViewModel,
                             onNavigateToChat = onNavigateToChat,
-                            onNavigateToBotStatus = onNavigateToBotStatus
+                            onNavigateToBotStatus = onNavigateToBotStatus,
+                            onNavigateToLihatPesanan = onNavigateToLihatPesanan
                         )
                     }
                 }
@@ -120,7 +122,8 @@ fun DashboardContent(
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
     onNavigateToChat: (String) -> Unit,
-    onNavigateToBotStatus: () -> Unit
+    onNavigateToBotStatus: () -> Unit,
+    onNavigateToLihatPesanan: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -174,7 +177,13 @@ fun DashboardContent(
                     color = Color(0xFF64748B)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                QuickActionsSection(brandGreen, textColorPrimary, botViewModel, onNavigateToBotStatus)
+                QuickActionsSection(
+                    brandGreen = brandGreen,
+                    textColor = textColorPrimary,
+                    botViewModel = botViewModel,
+                    onNavigateToBotStatus = onNavigateToBotStatus,
+                    onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                )
                 Spacer(modifier = Modifier.height(20.dp))
             }
             
@@ -205,7 +214,7 @@ fun DashboardContent(
                         fontFamily = InterFamily,
                         modifier = Modifier.clickable(
                             interactionSource = interactionSource,
-                            indication = null // Menghapus efek ripple background
+                            indication = ripple(color = Color.Gray)
                         ) {
                             // Logic Lihat Semua
                         }
@@ -377,7 +386,8 @@ fun QuickActionsSection(
     brandGreen: Color, 
     textColor: Color, 
     botViewModel: BotViewModel,
-    onNavigateToBotStatus: () -> Unit
+    onNavigateToBotStatus: () -> Unit,
+    onNavigateToLihatPesanan: () -> Unit
 ) {
     val isBotActive by botViewModel.isBotActive
     
@@ -391,7 +401,7 @@ fun QuickActionsSection(
             brandColor = brandGreen,
             textColor = textColor,
             modifier = Modifier.weight(1f),
-            onClick = { /* Navigasi Pesanan */ }
+            onClick = onNavigateToLihatPesanan
         )
         QuickActionButton(
             title = "Cek Status Bot",
@@ -417,83 +427,94 @@ fun QuickActionButton(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val brandGreen = Color(0xFF107C42)
+    val interactionSource = remember { MutableInteractionSource() }
+    
     Card(
-        onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(color = Color.Gray)
+                ) { onClick() }
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(brandColor.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
-                }
-                
-                // Status Indicator (Lampu Menyala)
-                if (showStatusIndicator) {
-                    val statusColor = if (isStatusActive) Color(0xFF107C42) else Color(0xFFDC3545)
-                    
-                    // Efek Animasi Denyut (Pulse)
-                    val infiniteTransition = rememberInfiniteTransition(label = "glowTransition")
-                    val alpha by infiniteTransition.animateFloat(
-                        initialValue = 0.3f,
-                        targetValue = 0.7f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1200, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "glowAlpha"
-                    )
-                    val scale by infiniteTransition.animateFloat(
-                        initialValue = 1f,
-                        targetValue = 1.6f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1200, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "glowScale"
-                    )
-
                     Box(
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(brandColor.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Layer 1: Cahaya Luar (Glow)
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .graphicsLayer(scaleX = scale, scaleY = scale)
-                                .clip(CircleShape)
-                                .background(statusColor.copy(alpha = alpha))
+                        Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
+                    }
+                    
+                    // Status Indicator (Lampu Menyala)
+                    if (showStatusIndicator) {
+                        val statusColor = if (isStatusActive) Color(0xFF107C42) else Color(0xFFDC3545)
+                        
+                        // Efek Animasi Denyut (Pulse)
+                        val infiniteTransition = rememberInfiniteTransition(label = "glowTransition")
+                        val alpha by infiniteTransition.animateFloat(
+                            initialValue = 0.3f,
+                            targetValue = 0.7f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1200, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "glowAlpha"
                         )
-                        // Layer 2: Inti Lampu (Solid)
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(statusColor)
+                        val scale by infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.6f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1200, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "glowScale"
                         )
+
+                        Box(
+                            modifier = Modifier.padding(top = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Layer 1: Cahaya Luar (Glow)
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .graphicsLayer(scaleX = scale, scaleY = scale)
+                                    .clip(CircleShape)
+                                    .background(statusColor.copy(alpha = alpha))
+                            )
+                            // Layer 2: Inti Lampu (Solid)
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(statusColor)
+                            )
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = textColor)
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = textColor)
         }
     }
 }
@@ -501,9 +522,9 @@ fun QuickActionButton(
 @Composable
 fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
     val brandGreen = Color(0xFF107C42)
+    val interactionSource = remember { MutableInteractionSource() }
     
     Card(
-        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
@@ -512,98 +533,107 @@ fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
         border = BorderStroke(1.dp, Color(0xFFEEF2F6)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(color = Color.Gray)
+                ) { onClick() }
         ) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFF1F5F9)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color(0xFF94A3B8),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = chat.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    fontFamily = InterFamily,
-                    color = textColor,
-                    style = androidx.compose.ui.text.TextStyle(
-                        platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                            includeFontPadding = false
-                        )
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(24.dp)
                     )
-                )
-                Text(
-                    text = chat.lastMessage,
-                    fontSize = 12.sp,
-                    fontFamily = InterFamily,
-                    color = Color(0xFF64748B),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = androidx.compose.ui.text.TextStyle(
-                        platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                            includeFontPadding = false
-                        )
-                    )
-                )
-            }
-            
-            Column(
-                modifier = Modifier.padding(start = 8.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = chat.time,
-                    fontSize = 11.sp,
-                    fontFamily = InterFamily,
-                    color = Color(0xFF94A3B8)
-                )
+                }
                 
-                if (chat.unreadCount > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(brandGreen),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = chat.unreadCount.toString(),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = InterFamily,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            style = androidx.compose.ui.text.TextStyle(
-                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                                    includeFontPadding = false
-                                ),
-                                lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
-                                    alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
-                                    trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both
-                                )
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = chat.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        fontFamily = InterFamily,
+                        color = textColor,
+                        style = androidx.compose.ui.text.TextStyle(
+                            platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                                includeFontPadding = false
                             )
                         )
+                    )
+                    Text(
+                        text = chat.lastMessage,
+                        fontSize = 12.sp,
+                        fontFamily = InterFamily,
+                        color = Color(0xFF64748B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = androidx.compose.ui.text.TextStyle(
+                            platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
+                    )
+                }
+                
+                Column(
+                    modifier = Modifier.padding(start = 8.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = chat.time,
+                        fontSize = 11.sp,
+                        fontFamily = InterFamily,
+                        color = Color(0xFF94A3B8)
+                    )
+                    
+                    if (chat.unreadCount > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(brandGreen),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = chat.unreadCount.toString(),
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = InterFamily,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                style = androidx.compose.ui.text.TextStyle(
+                                    platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                                        includeFontPadding = false
+                                    ),
+                                    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                                        alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                                        trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both
+                                    )
+                                )
+                            )
+                        }
                     }
                 }
             }

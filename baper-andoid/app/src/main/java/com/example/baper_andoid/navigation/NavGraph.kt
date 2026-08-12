@@ -18,6 +18,8 @@ import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
+import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananScreen
+import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananViewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.first
@@ -34,6 +36,7 @@ fun NavGraph(navController: NavHostController) {
     val chatViewModel: ChatViewModel = viewModel()
     val botViewModel: BotViewModel = viewModel()
     val profilViewModel: ProfilViewModel = viewModel()
+    val lihatPesananViewModel: LihatPesananViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         
@@ -110,6 +113,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToBotStatus = {
                     navController.navigate(Screen.BotStatus.route)
+                },
+                onNavigateToLihatPesanan = {
+                    navController.navigate(Screen.LihatPesanan.route)
                 }
             )
         }
@@ -125,6 +131,17 @@ fun NavGraph(navController: NavHostController) {
             BotStatusScreen(
                 viewModel = botViewModel,
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.LihatPesanan.route) { _ ->
+            LihatPesananScreen(
+                viewModel = lihatPesananViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId ->
+                    chatViewModel.markAsRead(chatId)
+                    navController.navigate(Screen.ChatDetail.route)
+                }
             )
         }
     }
