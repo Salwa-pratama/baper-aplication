@@ -6,9 +6,11 @@ junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 lifecycle = "2.8.7"
 activityCompose = "1.10.0"
-kotlin = "2.1.10"
-composeBom = "2025.02.00"
-lottie = "6.6.2"
+kotlin = "2.2.10"
+composeBom = "2026.02.01"
+lottie = "6.7.1"
+coil = "2.7.0"
+ucrop = "2.2.11"
 navigationCompose = "2.8.7"
 
 [libraries]
@@ -32,8 +34,9 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 androidx-compose-ui-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+ucrop = { group = "com.github.yalantis", name = "ucrop", version.ref = "ucrop" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-

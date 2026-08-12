@@ -40,6 +40,8 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui.google.fonts)
     implementation(libs.lottie.compose)
+    implementation(libs.coil.compose)
+    implementation(libs.ucrop)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
