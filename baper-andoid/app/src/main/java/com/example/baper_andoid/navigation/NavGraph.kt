@@ -4,8 +4,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.baper_andoid.R
 import com.example.baper_andoid.data.local.UserPreferences
 import com.example.baper_andoid.ui.screen.splash.BaperSplashScreen
@@ -20,6 +22,7 @@ import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananScreen
 import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananViewModel
+import com.example.baper_andoid.ui.screen.rekap.RekapDetailScreen
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.first
@@ -114,8 +117,11 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateToBotStatus = {
                     navController.navigate(Screen.BotStatus.route)
                 },
-                onNavigateToLihatPesanan = {
-                    navController.navigate(Screen.LihatPesanan.route)
+                onNavigateToLihatPesanan = { tabIndex ->
+                    navController.navigate(Screen.LihatPesanan.createRoute(tabIndex))
+                },
+                onNavigateToRekapDetail = { month ->
+                    navController.navigate(Screen.RekapDetail.createRoute(month))
                 }
             )
         }
@@ -134,9 +140,34 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.LihatPesanan.route) { _ ->
+        composable(
+            route = Screen.LihatPesanan.route,
+            arguments = listOf(
+                navArgument("tabIndex") { 
+                    type = NavType.IntType
+                    defaultValue = 0 
+                }
+            )
+        ) { backStackEntry ->
+            val tabIndex = backStackEntry.arguments?.getInt("tabIndex") ?: 0
             LihatPesananScreen(
                 viewModel = lihatPesananViewModel,
+                initialTab = tabIndex,
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId ->
+                    chatViewModel.markAsRead(chatId)
+                    navController.navigate(Screen.ChatDetail.route)
+                }
+            )
+        }
+
+        composable(
+            route = Screen.RekapDetail.route,
+            arguments = listOf(navArgument("month") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val month = backStackEntry.arguments?.getString("month") ?: ""
+            RekapDetailScreen(
+                month = month,
                 onBack = { navController.popBackStack() },
                 onNavigateToChat = { chatId ->
                     chatViewModel.markAsRead(chatId)
