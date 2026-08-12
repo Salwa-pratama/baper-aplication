@@ -14,6 +14,7 @@ import com.example.baper_andoid.ui.screen.chat.ChatScreen
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
+import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
@@ -27,6 +28,7 @@ fun NavGraph(navController: NavHostController) {
     // ViewModel tunggal untuk fitur Chat (Shared)
     val chatViewModel: ChatViewModel = viewModel()
     val botViewModel: BotViewModel = viewModel()
+    val profilViewModel: ProfilViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         // ... (rest of the routes)
@@ -79,6 +81,7 @@ fun NavGraph(navController: NavHostController) {
             HomeScreen(
                 chatViewModel = chatViewModel,
                 botViewModel = botViewModel,
+                profilViewModel = profilViewModel,
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
