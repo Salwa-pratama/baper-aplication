@@ -339,6 +339,34 @@ func (s *service) SendMessage(to string, text string) error {
 	}
 
 	log.Println("Berhasil kirim pesan balasan ke:", to)
+	
+	// Simpan pesan keluar (manual dari admin) ke database
+	bot, errBot := s.repo.FindBotByBusinessPhone(phoneID)
+	if errBot == nil {
+		customer, errCust := s.repo.FindCustomerByPhoneAndBusiness(to, bot.BusinessID)
+		if errCust == nil {
+			session, errSess := s.repo.FindActiveChatSession(bot.ID, customer.ID)
+			if errSess == nil {
+				outgoingMsg := &models.Message{
+					SessionID:  session.ID,
+					SenderType: "bot", // bisa juga "admin", frontend hanya cek != "customer"
+					Content:    text,
+				}
+				if errSave := s.repo.SaveMessage(outgoingMsg); errSave != nil {
+					log.Printf("Gagal menyimpan pesan manual ke DB: %v", errSave)
+				} else {
+					log.Println("Pesan manual berhasil disimpan ke database")
+				}
+			} else {
+				log.Printf("Gagal menemukan session aktif untuk disimpan: %v", errSess)
+			}
+		} else {
+			log.Printf("Gagal menemukan customer untuk disimpan: %v", errCust)
+		}
+	} else {
+		log.Printf("Gagal menemukan bot untuk disimpan: %v", errBot)
+	}
+
 	return nil
 }
 

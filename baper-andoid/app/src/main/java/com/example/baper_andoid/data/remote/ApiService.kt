@@ -15,6 +15,8 @@ import com.example.baper_andoid.data.remote.dto.response.ProductResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductListResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductDetailResponse
 import com.example.baper_andoid.data.remote.dto.response.ChatResponse
+import com.example.baper_andoid.data.remote.dto.response.ConversationListResponse
+import com.example.baper_andoid.data.remote.dto.response.ConversationDetailResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -77,6 +79,14 @@ interface ApiService {
     ): ProductResponse
 
     // Webhook / Chat — butuh Bearer token.
+    @GET("conversations")
+    suspend fun getConversations(): ConversationListResponse
+
+    @GET("conversations/{id}/messages")
+    suspend fun getConversationMessages(
+        @Path("id") id: String
+    ): ConversationDetailResponse
+
     @POST("webhook/send-message")
     suspend fun sendMessage(
         @Body request: SendMessageRequest

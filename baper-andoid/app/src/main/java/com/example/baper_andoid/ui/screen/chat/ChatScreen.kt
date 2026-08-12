@@ -11,9 +11,9 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,26 +23,61 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.baper_andoid.ui.theme.InterFamily
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
+import java.text.SimpleDateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     chatViewModel: ChatViewModel,
+    sessionId: String,
     onBack: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
     var messageText by remember { mutableStateOf("") }
+    var isRefreshing by remember { mutableStateOf(false) }
     
-    // State untuk daftar pesan diambil dari ViewModel
     val messages = chatViewModel.messages
-    
-    // State untuk scroll list otomatis ke bawah
+    val customerName by chatViewModel.currentCustomerName.collectAsState()
     val listState = rememberLazyListState()
+
+    fun formatUtcToLocal(utcTime: String): String {
+        return try {
+            // Remove fractional seconds if they exist for easier parsing with basic SimpleDateFormat
+            var cleanedString = utcTime
+            if (cleanedString.contains(".")) {
+                cleanedString = cleanedString.substringBefore(".") + "Z"
+            }
+            if (!cleanedString.endsWith("Z") && !cleanedString.contains("+")) {
+                cleanedString += "Z"
+            }
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            val date = format.parse(cleanedString) ?: return utcTime.take(16)
+            
+            val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            outputFormat.timeZone = TimeZone.getDefault()
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            if (utcTime.length >= 16) utcTime.substring(11, 16) else utcTime
+        }
+    }
     
-    // Otomatis scroll ke bawah saat ada pesan baru
+    LaunchedEffect(sessionId) {
+        if (sessionId.isNotEmpty()) {
+            chatViewModel.fetchMessages(sessionId)
+            
+            // Auto-polling setiap 5 detik untuk mensimulasikan real-time
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                chatViewModel.fetchMessages(sessionId)
+            }
+        }
+    }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -66,7 +101,7 @@ fun ChatScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "BAPER Assistant",
+                                text = customerName.ifEmpty { "Memuat..." },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = InterFamily,
@@ -94,7 +129,6 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            // Kolom Input Pesan Mengambang
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -134,7 +168,7 @@ fun ChatScreen(
                     FloatingActionButton(
                         onClick = { 
                             if (messageText.isNotBlank()) {
-                                chatViewModel.sendMessage(messageText)
+                                chatViewModel.sendMessage(messageText, sessionId)
                                 messageText = ""
                             }
                         },
@@ -150,21 +184,36 @@ fun ChatScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            state = listState,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                chatViewModel.fetchMessages(sessionId, onComplete = {
+                    isRefreshing = false
+                })
+            },
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
-                .background(bgGray)
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(messages) { message ->
-                ChatBubble(
-                    message = message.text,
-                    isUser = message.isUser,
-                    time = message.time
-                )
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(bgGray),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(messages) { message ->
+                    val isUser = message.senderType != "customer"
+                    // Format time simply
+                    val displayTime = formatUtcToLocal(message.createdAt)
+                    ChatBubble(
+                        message = message.content,
+                        isUser = isUser,
+                        time = displayTime
+                    )
+                }
             }
         }
     }

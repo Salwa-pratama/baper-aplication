@@ -1,7 +1,4 @@
-- [ ] Implement `UserPreferences` (DataStore)
-- [ ] Update `RetrofitClient` with Auth Interceptor
-- [ ] Update `LoginViewModel` to save token
-- [ ] Implement `RegisterViewModel`
-- [ ] Update `NavGraph` & Splash navigation logic
-- [ ] Implement loading in `HomeScreen`
-- [ ] Verify whole flow
+- [ ] Update `ChatViewModel.kt` for instant data set and list synchronization
+- [ ] Update `HomeScreen.kt` to pass conversation data on click
+- [ ] Update `ChatScreen.kt` for dynamic header and auto-polling
+- [ ] Verify build and functionality

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.example.baper_andoid.ui.screen.lihatpesanan.Order
 import com.example.baper_andoid.ui.screen.lihatpesanan.OrderCard
 import com.example.baper_andoid.ui.theme.InterFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +40,9 @@ fun RekapDetailScreen(
     val bgGray = Color(0xFFF7F9F8)
     val textColorPrimary = Color(0xFF0F172A)
     val textColorSecondary = Color(0xFF64748B)
+
+    val scope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
 
     // Mock data for the specific month (only paid orders)
     val paidOrders = listOf(
@@ -111,22 +117,33 @@ fun RekapDetailScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                scope.launch {
+                    delay(2000)
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.padding(paddingValues)
         ) {
-            items(paidOrders) { order ->
-                OrderCard(
-                    order = order, 
-                    brandGreen = brandGreen, 
-                    textColorPrimary = textColorPrimary, 
-                    textColorSecondary = textColorSecondary,
-                    onClick = { onNavigateToChat(order.chatId) },
-                    onConfirmClick = {} // No confirm button on this screen
-                )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(paidOrders) { order ->
+                    OrderCard(
+                        order = order, 
+                        brandGreen = brandGreen, 
+                        textColorPrimary = textColorPrimary, 
+                        textColorSecondary = textColorSecondary,
+                        onClick = { onNavigateToChat(order.chatId) },
+                        onConfirmClick = {} // No confirm button on this screen
+                    )
+                }
             }
         }
     }

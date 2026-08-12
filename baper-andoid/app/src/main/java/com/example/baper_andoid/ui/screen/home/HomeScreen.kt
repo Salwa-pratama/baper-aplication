@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,7 @@ import com.example.baper_andoid.data.repository.HomeRepository
 import com.example.baper_andoid.data.repository.ProductRepository
 import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
-import com.example.baper_andoid.ui.screen.chat.BaperChat
+import com.example.baper_andoid.data.remote.dto.response.ConversationItem
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
@@ -47,7 +48,10 @@ import com.example.baper_andoid.ui.screen.produk.ProdukScreen
 import com.example.baper_andoid.ui.screen.produk.ProdukViewModel
 import com.example.baper_andoid.ui.screen.produk.ProdukViewModelFactory
 import com.example.baper_andoid.ui.theme.InterFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     chatViewModel: ChatViewModel,
@@ -67,6 +71,7 @@ fun HomeScreen(
     val produkViewModel: ProdukViewModel = viewModel(factory = ProdukViewModelFactory(productRepository))
     
     val uiState by homeViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
@@ -87,38 +92,78 @@ fun HomeScreen(
                 startDestination = BottomNavItem.Beranda.route
             ) {
                 composable(BottomNavItem.Beranda.route) {
-                    if (uiState.isLoading) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color(0xFF107C42))
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            chatViewModel.fetchConversations(onComplete = {
+                                isRefreshing = false
+                            })
+                            // Juga refresh dashboard stats jika ada
+                            homeViewModel.refreshData()
                         }
-                    } else {
-                        val name by profilViewModel.nama
-                        val imageUri by profilViewModel.profileImageUri
-                        
-                        DashboardContent(
-                            name = name,
-                            imageUri = imageUri,
-                            chatViewModel = chatViewModel,
-                            botViewModel = botViewModel,
-                            onNavigateToChat = onNavigateToChat,
-                            onNavigateToBotStatus = onNavigateToBotStatus,
-                            onNavigateToLihatPesanan = onNavigateToLihatPesanan
-                        )
+                    ) {
+                        if (uiState.isLoading) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Color(0xFF107C42))
+                            }
+                        } else {
+                            val name by profilViewModel.nama
+                            val imageUri by profilViewModel.profileImageUri
+                            
+                            DashboardContent(
+                                name = name,
+                                imageUri = imageUri,
+                                chatViewModel = chatViewModel,
+                                botViewModel = botViewModel,
+                                onNavigateToChat = onNavigateToChat,
+                                onNavigateToBotStatus = onNavigateToBotStatus,
+                                onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                            )
+                        }
                     }
                 }
                 composable(BottomNavItem.Produk.route) {
                     ProdukScreen(viewModel = produkViewModel)
                 }
                 composable(BottomNavItem.Rekap.route) {
-                    RekapScreen(
-                        onNavigateToRekapDetail = onNavigateToRekapDetail
-                    )
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
+                        }
+                    ) {
+                        RekapScreen(
+                            onNavigateToRekapDetail = onNavigateToRekapDetail
+                        )
+                    }
                 }
                 composable(BottomNavItem.Profil.route) {
-                    ProfilScreen(
-                        viewModel = profilViewModel,
-                        onLogout = onLogout
-                    )
+                    var isRefreshing by remember { mutableStateOf(false) }
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            scope.launch {
+                                delay(2000)
+                                isRefreshing = false
+                            }
+                        }
+                    ) {
+                        ProfilScreen(
+                            viewModel = profilViewModel,
+                            onLogout = onLogout
+                        )
+                    }
                 }
             }
         }
@@ -141,15 +186,17 @@ fun DashboardContent(
     val bgGray = Color(0xFFF7F9F8)
     val textColorPrimary = Color(0xFF0F172A)
     
-    // Mengambil data chat langsung dari ViewModel
     val chats = chatViewModel.chatList
+    
+    LaunchedEffect(Unit) {
+        chatViewModel.fetchConversations()
+    }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(bgGray)
     ) {
-        // 1. Area Header yang Tetap (Fixed)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -168,7 +215,6 @@ fun DashboardContent(
             )
         }
 
-        // 2. Area Konten yang bisa digulir (Scrollable)
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -214,7 +260,6 @@ fun DashboardContent(
                         color = textColorPrimary
                     )
                     
-                    // Efek Interaksi Teks (Tanpa background button)
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     
@@ -235,12 +280,14 @@ fun DashboardContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // Loop data chat dari ViewModel
             items(chats) { chat ->
                 ChatListItem(
                     chat = chat, 
                     textColor = textColorPrimary, 
-                    onClick = { onNavigateToChat(chat.id) }
+                    onClick = { 
+                        chatViewModel.setActiveConversation(chat)
+                        onNavigateToChat(chat.sessionId) 
+                    }
                 )
             }
         }
@@ -439,7 +486,6 @@ fun QuickActionButton(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val brandGreen = Color(0xFF107C42)
     val interactionSource = remember { MutableInteractionSource() }
     
     Card(
@@ -477,11 +523,9 @@ fun QuickActionButton(
                         Icon(icon, contentDescription = null, tint = brandColor, modifier = Modifier.size(20.dp))
                     }
                     
-                    // Status Indicator (Lampu Menyala)
                     if (showStatusIndicator) {
                         val statusColor = if (isStatusActive) Color(0xFF107C42) else Color(0xFFDC3545)
                         
-                        // Efek Animasi Denyut (Pulse)
                         val infiniteTransition = rememberInfiniteTransition(label = "glowTransition")
                         val alpha by infiniteTransition.animateFloat(
                             initialValue = 0.3f,
@@ -506,7 +550,6 @@ fun QuickActionButton(
                             modifier = Modifier.padding(top = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            // Layer 1: Cahaya Luar (Glow)
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
@@ -514,7 +557,6 @@ fun QuickActionButton(
                                     .clip(CircleShape)
                                     .background(statusColor.copy(alpha = alpha))
                             )
-                            // Layer 2: Inti Lampu (Solid)
                             Box(
                                 modifier = Modifier
                                     .size(8.dp)
@@ -532,7 +574,7 @@ fun QuickActionButton(
 }
 
 @Composable
-fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
+fun ChatListItem(chat: ConversationItem, textColor: Color, onClick: () -> Unit) {
     val brandGreen = Color(0xFF107C42)
     val interactionSource = remember { MutableInteractionSource() }
     
@@ -581,7 +623,7 @@ fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = chat.name,
+                        text = chat.customerName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         fontFamily = InterFamily,
@@ -612,41 +654,14 @@ fun ChatListItem(chat: BaperChat, textColor: Color, onClick: () -> Unit) {
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    // Simple formatting for time
+                    val displayTime = chat.lastMessageAt?.take(10) ?: ""
                     Text(
-                        text = chat.time,
+                        text = displayTime,
                         fontSize = 11.sp,
                         fontFamily = InterFamily,
                         color = Color(0xFF94A3B8)
                     )
-                    
-                    if (chat.unreadCount > 0) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(brandGreen),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = chat.unreadCount.toString(),
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = InterFamily,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                style = androidx.compose.ui.text.TextStyle(
-                                    platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                                        includeFontPadding = false
-                                    ),
-                                    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
-                                        alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
-                                        trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both
-                                    )
-                                )
-                            )
-                        }
-                    }
                 }
             }
         }

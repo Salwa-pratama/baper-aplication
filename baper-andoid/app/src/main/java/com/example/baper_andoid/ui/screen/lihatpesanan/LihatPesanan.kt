@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Locale
 import com.example.baper_andoid.ui.theme.InterFamily
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +39,9 @@ fun LihatPesananScreen(
     val bgGray = Color(0xFFF7F9F8)
     val textColorPrimary = Color(0xFF0F172A)
     val textColorSecondary = Color(0xFF64748B)
+    
+    val scope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
     
     var selectedTab by remember { mutableIntStateOf(initialTab) }
     val tabs = listOf("Belum Bayar", "Sudah Lunas")
@@ -100,67 +106,77 @@ fun LihatPesananScreen(
             }
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                scope.launch {
+                    delay(2000)
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.padding(paddingValues)
         ) {
-            // Tab Selector
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                tabs.forEachIndexed { index, title ->
-                    val isSelected = selectedTab == index
-                    val interactionSource = remember { MutableInteractionSource() }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = ripple(color = Color.Gray)
-                            ) { 
-                                selectedTab = index 
-                            }
-                            .padding(top = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = title,
-                            fontSize = 14.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) brandGreen else textColorSecondary.copy(alpha = 0.6f),
-                            fontFamily = InterFamily
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Box(
+                // Tab Selector
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        val isSelected = selectedTab == index
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(2.dp)
-                                .background(if (isSelected) brandGreen else Color.Transparent)
-                        )
+                                .weight(1f)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = ripple(color = Color.Gray)
+                                ) { 
+                                    selectedTab = index 
+                                }
+                                .padding(top = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) brandGreen else textColorSecondary.copy(alpha = 0.6f),
+                                fontFamily = InterFamily
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(2.dp)
+                                    .background(if (isSelected) brandGreen else Color.Transparent)
+                            )
+                        }
                     }
                 }
-            }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 100.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(filteredOrders) { order ->
-                    OrderCard(
-                        order = order, 
-                        brandGreen = brandGreen, 
-                        textColorPrimary = textColorPrimary, 
-                        textColorSecondary = textColorSecondary,
-                        onClick = { onNavigateToChat(order.chatId) },
-                        onConfirmClick = {
-                            orderToConfirm = order
-                            showConfirmDialog = true
-                        }
-                    )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 100.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(filteredOrders) { order ->
+                        OrderCard(
+                            order = order, 
+                            brandGreen = brandGreen, 
+                            textColorPrimary = textColorPrimary, 
+                            textColorSecondary = textColorSecondary,
+                            onClick = { onNavigateToChat(order.chatId) },
+                            onConfirmClick = {
+                                orderToConfirm = order
+                                showConfirmDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
