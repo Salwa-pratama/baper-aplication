@@ -19,10 +19,10 @@ fun BottomNavBar(navController: NavController) {
     val brandGreen = Color(0xFF107C42)
     val inactiveColor = Color.Black // Tetap hitam sesuai permintaan sebelumnya
     
-    // Optimasi: Gunakan tonalElevation yang lebih rendah agar render bayangan tidak berat
+    // NavigationBar murni tanpa shadow/tonal agar tidak ada garis otomatis dari sistem
     NavigationBar(
         containerColor = Color.White,
-        tonalElevation = 2.dp
+        tonalElevation = 0.dp
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         
@@ -55,7 +55,6 @@ fun BottomNavBar(navController: NavController) {
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // Menghindari penumpukan stack navigasi
                             popUpTo(navController.graph.startDestinationId) {
                                 saveState = true
                             }
