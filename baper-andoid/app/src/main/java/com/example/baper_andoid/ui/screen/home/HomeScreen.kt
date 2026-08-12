@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.baper_andoid.data.remote.RetrofitClient
 import com.example.baper_andoid.data.repository.HomeRepository
+import com.example.baper_andoid.data.repository.ProductRepository
 import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
 import com.example.baper_andoid.data.remote.dto.response.ConversationItem
@@ -43,6 +44,9 @@ import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilScreen
 import com.example.baper_andoid.ui.screen.rekap.RekapScreen
+import com.example.baper_andoid.ui.screen.produk.ProdukScreen
+import com.example.baper_andoid.ui.screen.produk.ProdukViewModel
+import com.example.baper_andoid.ui.screen.produk.ProdukViewModelFactory
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -62,6 +66,10 @@ fun HomeScreen(
     val context = LocalContext.current
     val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(homeRepository))
+    
+    val productRepository = remember { ProductRepository(RetrofitClient.getInstance(context)) }
+    val produkViewModel: ProdukViewModel = viewModel(factory = ProdukViewModelFactory(productRepository))
+    
     val uiState by homeViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -118,20 +126,7 @@ fun HomeScreen(
                     }
                 }
                 composable(BottomNavItem.Produk.route) {
-                    var isRefreshing by remember { mutableStateOf(false) }
-                    
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
-                            isRefreshing = true
-                            scope.launch {
-                                delay(2000)
-                                isRefreshing = false
-                            }
-                        }
-                    ) {
-                        PlaceholderPage(title = "Halaman Produk")
-                    }
+                    ProdukScreen(viewModel = produkViewModel)
                 }
                 composable(BottomNavItem.Rekap.route) {
                     var isRefreshing by remember { mutableStateOf(false) }

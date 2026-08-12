@@ -13,7 +13,7 @@ sealed class BottomNavItem(
     val route: String
 ) {
     object Beranda : BottomNavItem("Beranda", Icons.Default.Home, "beranda")
-    object Produk : BottomNavItem("Produk", Icons.Default.Inventory2, "produk")
+    object Produk : BottomNavItem("Product", Icons.Default.Inventory2, "produk")
     object Rekap : BottomNavItem("Rekap", Icons.Default.BarChart, "rekap")
     object Profil : BottomNavItem("Profil", Icons.Default.Person, "profil")
 }
