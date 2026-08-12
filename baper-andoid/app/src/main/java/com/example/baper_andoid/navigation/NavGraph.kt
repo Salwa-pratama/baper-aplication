@@ -1,10 +1,13 @@
 package com.example.baper_andoid.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.baper_andoid.R
+import com.example.baper_andoid.data.local.UserPreferences
 import com.example.baper_andoid.ui.screen.splash.BaperSplashScreen
 import com.example.baper_andoid.ui.screen.onboarding.BaperOnboardingScreen
 import com.example.baper_andoid.ui.screen.login.LoginScreen
@@ -15,35 +18,46 @@ import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.example.baper_andoid.R
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @Composable
 fun NavGraph(navController: NavHostController) {
-    // Load Lottie composition sekali saja untuk digunakan di Splash & Onboarding
+    val context = LocalContext.current
+    val userPreferences = remember { UserPreferences(context) }
+    val scope = rememberCoroutineScope()
+    
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.logo_vectorized))
     
-    // ViewModel tunggal untuk fitur Chat (Shared)
     val chatViewModel: ChatViewModel = viewModel()
     val botViewModel: BotViewModel = viewModel()
     val profilViewModel: ProfilViewModel = viewModel()
 
-    NavHost(navController = navController, startDestination = Screen.Home.route) {
-        // ... (rest of the routes)
-        composable(Screen.Splash.route) {
+    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+        
+        composable(Screen.Splash.route) { _ ->
             BaperSplashScreen(
                 composition = composition,
                 onFinished = {
-                    navController.navigate(Screen.OnBoarding.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    scope.launch {
+                        val token = userPreferences.authToken.first()
+                        if (!token.isNullOrEmpty()) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Splash.route) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(Screen.Splash.route) { inclusive = true }
+                            }
+                        }
                     }
                 }
             )
         }
 
-        composable(Screen.OnBoarding.route) {
+        composable(Screen.OnBoarding.route) { _ ->
             BaperOnboardingScreen(
                 onFinished = {
                     navController.navigate(Screen.Login.route) {
@@ -53,7 +67,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Login.route) {
+        composable(Screen.Login.route) { _ ->
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Screen.Home.route) {
@@ -66,7 +80,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Register.route) {
+        composable(Screen.Register.route) { _ ->
             RegisterScreen(
                 onRegisterSuccess = {
                     navController.navigate(Screen.Login.route) {
@@ -77,18 +91,21 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Home.route) {
+        composable(Screen.Home.route) { _ ->
             HomeScreen(
                 chatViewModel = chatViewModel,
                 botViewModel = botViewModel,
                 profilViewModel = profilViewModel,
                 onLogout = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
+                    scope.launch {
+                        userPreferences.clearSession()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 },
                 onNavigateToChat = { chatId ->
-                    chatViewModel.markAsRead(chatId) // Hapus badge saat dibuka
+                    chatViewModel.markAsRead(chatId)
                     navController.navigate(Screen.ChatDetail.route)
                 },
                 onNavigateToBotStatus = {
@@ -97,14 +114,14 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.ChatDetail.route) {
+        composable(Screen.ChatDetail.route) { _ ->
             ChatScreen(
                 chatViewModel = chatViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
 
-        composable(Screen.BotStatus.route) {
+        composable(Screen.BotStatus.route) { _ ->
             BotStatusScreen(
                 viewModel = botViewModel,
                 onBack = { navController.popBackStack() }

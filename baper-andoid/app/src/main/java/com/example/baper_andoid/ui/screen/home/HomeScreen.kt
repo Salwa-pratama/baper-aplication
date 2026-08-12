@@ -30,6 +30,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.baper_andoid.data.remote.RetrofitClient
+import com.example.baper_andoid.data.repository.HomeRepository
 import com.example.baper_andoid.navigation.BottomNavItem
 import com.example.baper_andoid.ui.components.BottomNavBar
 import com.example.baper_andoid.ui.screen.chat.BaperChat
@@ -48,6 +52,11 @@ fun HomeScreen(
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit
 ) {
+    val context = LocalContext.current
+    val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
+    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(homeRepository))
+    val uiState by homeViewModel.uiState.collectAsState()
+
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
 
@@ -67,17 +76,23 @@ fun HomeScreen(
                 startDestination = BottomNavItem.Beranda.route
             ) {
                 composable(BottomNavItem.Beranda.route) {
-                    val name by profilViewModel.nama
-                    val imageUri by profilViewModel.profileImageUri
-                    
-                    DashboardContent(
-                        name = name,
-                        imageUri = imageUri,
-                        chatViewModel = chatViewModel,
-                        botViewModel = botViewModel,
-                        onNavigateToChat = onNavigateToChat,
-                        onNavigateToBotStatus = onNavigateToBotStatus
-                    )
+                    if (uiState.isLoading) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color(0xFF107C42))
+                        }
+                    } else {
+                        val name by profilViewModel.nama
+                        val imageUri by profilViewModel.profileImageUri
+                        
+                        DashboardContent(
+                            name = name,
+                            imageUri = imageUri,
+                            chatViewModel = chatViewModel,
+                            botViewModel = botViewModel,
+                            onNavigateToChat = onNavigateToChat,
+                            onNavigateToBotStatus = onNavigateToBotStatus
+                        )
+                    }
                 }
                 composable(BottomNavItem.Produk.route) {
                     PlaceholderPage(title = "Halaman Produk")
