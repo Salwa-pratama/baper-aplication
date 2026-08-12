@@ -17,11 +17,11 @@ import com.example.baper_andoid.ui.screen.chat.ChatScreen
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
+import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -33,6 +33,7 @@ fun NavGraph(navController: NavHostController) {
     
     val chatViewModel: ChatViewModel = viewModel()
     val botViewModel: BotViewModel = viewModel()
+    val profilViewModel: ProfilViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         
@@ -94,6 +95,7 @@ fun NavGraph(navController: NavHostController) {
             HomeScreen(
                 chatViewModel = chatViewModel,
                 botViewModel = botViewModel,
+                profilViewModel = profilViewModel,
                 onLogout = {
                     scope.launch {
                         userPreferences.clearSession()

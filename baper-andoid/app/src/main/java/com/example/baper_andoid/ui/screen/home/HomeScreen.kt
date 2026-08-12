@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -37,12 +39,15 @@ import com.example.baper_andoid.ui.components.BottomNavBar
 import com.example.baper_andoid.ui.screen.chat.BaperChat
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
+import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
+import com.example.baper_andoid.ui.screen.profil.ProfilScreen
 import com.example.baper_andoid.ui.theme.InterFamily
 
 @Composable
 fun HomeScreen(
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
+    profilViewModel: ProfilViewModel,
     onLogout: () -> Unit,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit
@@ -76,7 +81,12 @@ fun HomeScreen(
                             CircularProgressIndicator(color = Color(0xFF107C42))
                         }
                     } else {
+                        val name by profilViewModel.nama
+                        val imageUri by profilViewModel.profileImageUri
+                        
                         DashboardContent(
+                            name = name,
+                            imageUri = imageUri,
                             chatViewModel = chatViewModel,
                             botViewModel = botViewModel,
                             onNavigateToChat = onNavigateToChat,
@@ -91,7 +101,10 @@ fun HomeScreen(
                     PlaceholderPage(title = "Halaman Rekap")
                 }
                 composable(BottomNavItem.Profil.route) {
-                    ProfilePage(onLogout = onLogout)
+                    ProfilScreen(
+                        viewModel = profilViewModel,
+                        onLogout = onLogout
+                    )
                 }
             }
         }
@@ -102,6 +115,8 @@ fun HomeScreen(
 
 @Composable
 fun DashboardContent(
+    name: String,
+    imageUri: android.net.Uri?,
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
     onNavigateToChat: (String) -> Unit,
@@ -126,7 +141,11 @@ fun DashboardContent(
                 .background(bgGray)
                 .padding(top = 16.dp, start = 20.dp, end = 20.dp)
         ) {
-            DashboardHeader(textColorPrimary)
+            DashboardHeader(
+                name = name,
+                imageUri = imageUri,
+                textColor = textColorPrimary
+            )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(
                 thickness = 1.dp,
@@ -208,7 +227,11 @@ fun DashboardContent(
 }
 
 @Composable
-fun DashboardHeader(textColor: Color) {
+fun DashboardHeader(
+    name: String,
+    imageUri: android.net.Uri?,
+    textColor: Color
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -217,25 +240,34 @@ fun DashboardHeader(textColor: Color) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(Color(0xFFF1F5F9)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color(0xFF94A3B8),
-                    modifier = Modifier.size(20.dp)
-                )
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(12.dp))
             
             Column {
                 Text(
-                    text = "Halo, Toko Berkah",
-                    fontSize = 12.sp,
+                    text = "Halo,",
+                    fontSize = 13.sp,
                     color = Color(0xFF64748B),
                     fontFamily = InterFamily,
                     style = androidx.compose.ui.text.TextStyle(
@@ -245,11 +277,13 @@ fun DashboardHeader(textColor: Color) {
                     )
                 )
                 Text(
-                    text = "Selamat Pagi! \uD83D\uDC4B",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     color = textColor,
                     fontFamily = InterFamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = androidx.compose.ui.text.TextStyle(
                         platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                             includeFontPadding = false
@@ -584,23 +618,5 @@ fun PlaceholderPage(title: String) {
         contentAlignment = Alignment.Center
     ) {
         Text(text = title, style = MaterialTheme.typography.headlineMedium)
-    }
-}
-
-@Composable
-fun ProfilePage(onLogout: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Halaman Profil", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = onLogout,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545))
-        ) {
-            Text("Keluar (Logout)", color = Color.White)
-        }
     }
 }
