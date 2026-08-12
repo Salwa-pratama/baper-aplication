@@ -4,15 +4,12 @@ import (
 	"baper/internal/common/apperror"
 	"baper/internal/models"
 	"context"
-	"errors"
 	"fmt"
+	"time"
 )
 
-
-
-
 type Service interface {
-	RegisterBusiness(ctx context.Context,userID string, req RegisterBusinessRequest) (*RegisterBusinessResponse, error)
+	RegisterBusiness(ctx context.Context, userID string, req RegisterBusinessRequest) (*RegisterBusinessResponse, error)
 	GetMonthlyRecap(ctx context.Context, userID string, year, month int) (*MonthlyRecapResponse, error)
 	ExportMonthlyRecap(ctx context.Context, userID string, year, month int) (string, error)
 }
@@ -21,15 +18,24 @@ type service struct {
 	repo Repository
 }
 
-func NewBusinessService(repo Repository) Service{
-	return  &service{repo}
+func NewBusinessService(repo Repository) Service {
+	return &service{repo}
 }
 
 func (s *service) RegisterBusiness(ctx context.Context, userID string, req RegisterBusinessRequest) (*RegisterBusinessResponse, error) {
-	// 1. Cek udah pernah daftar dengan nama sama belum
+	if userID == "" {
+		return nil, apperror.Unauthorized("user tidak dikenali")
+	}
+	if req.Name == "" {
+		return nil, apperror.BadRequest("Nama bisnis wajib diisi")
+	}
+
+	// 1. Cek udah pernah daftar dengan nama sama belum.
+	// ExistingBusiness mengembalikan (nil, nil) kalau tidak ketemu, jadi
+	// err != nil berarti error DB sungguhan — bukan "belum pernah dibuat".
 	existing, err := s.repo.ExistingBusiness(ctx, userID, req.Name)
 	if err != nil {
-		return nil, apperror.NotFound("Business belum pernah dibuat")
+		return nil, apperror.Internal("Gagal memeriksa data bisnis")
 	}
 	if existing != nil {
 		return nil, apperror.Conflict("Kamu telah mendaftarkan bisnis dengan nama yang sama")
@@ -54,20 +60,29 @@ func (s *service) RegisterBusiness(ctx context.Context, userID string, req Regis
 }
 
 func (s *service) GetMonthlyRecap(ctx context.Context, userID string, year, month int) (*MonthlyRecapResponse, error) {
+	if userID == "" {
+		return nil, apperror.Unauthorized("user tidak dikenali")
+	}
+	if month < 1 || month > 12 || year < 1970 || year > 9999 {
+		return nil, apperror.BadRequest("Parameter year dan month tidak valid")
+	}
+
 	business, err := s.repo.FindBusinessByUserID(ctx, userID)
 	if err != nil {
 		return nil, apperror.NotFound("Bisnis tidak ditemukan untuk user ini")
 	}
 
-	startDate := fmt.Sprintf("%04d-%02d-01", year, month)
-	endDate := fmt.Sprintf("%04d-%02d-01", year, month+1)
-	if month == 12 {
-		endDate = fmt.Sprintf("%04d-01-01", year+1)
-	}
+	// Rentang tanggal: [awal bulan ini, awal bulan depan).
+	// time.AddDate menangani pergantian tahun tanpa perlu kasus khusus.
+	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+
+	startDate := start.Format("2006-01-02")
+	endDate := end.Format("2006-01-02")
 
 	recap, err := s.repo.GetMonthlyRecap(ctx, business.ID, startDate, endDate)
 	if err != nil {
-		return nil, errors.New("gagal mengambil rekap bulanan")
+		return nil, apperror.Internal("gagal mengambil rekap bulanan")
 	}
 
 	return recap, nil

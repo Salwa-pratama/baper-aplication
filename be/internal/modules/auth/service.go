@@ -7,12 +7,13 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
-
 
 type Service interface {
 	SignIn(req LoginRequest) (AuthResponse, error)
 	Register(req RegisterRequest) (RegisterResponse, error)
+	RefreshToken(req RefreshTokenRequest) (RefreshTokenData, error)
 }
 
 type service struct {
@@ -25,8 +26,12 @@ func NewAuthService(repo Repository) Service {
 
 func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 	// 1. Cek apakah email sudah terdaftar
-	existingUser, _ := s.repo.FindByEmail(req.Email)
-	if existingUser != nil && existingUser.ID != "" {
+	existingUser, err := s.repo.FindByEmail(req.Email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Error beneran (DB down), jangan diperlakukan sebagai "email bebas".
+		return RegisterResponse{}, errors.New("gagal memeriksa email")
+	}
+	if existingUser != nil {
 		return RegisterResponse{}, errors.New("email sudah terdaftar")
 	}
 
@@ -58,9 +63,9 @@ func (s *service) Register(req RegisterRequest) (RegisterResponse, error) {
 		return RegisterResponse{}, errors.New("gagal menyimpan data user dan bisnis")
 	}
 
-	return  RegisterResponse{
+	return RegisterResponse{
 		IdUser: newUser.ID,
-		Name: newUser.Name,
+		Name:   newUser.Name,
 	}, nil
 }
 
@@ -83,27 +88,58 @@ func (s *service) SignIn(req LoginRequest) (AuthResponse, error) {
 		return AuthResponse{}, errors.New("gagal membuat token")
 	}
 
-
 	refresh_token, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, errors.New("Gagal membuat refresh token")
 	}
 
+	tokenBearer := "Bearer " + token
 
 	return AuthResponse{
-		Status : true,
+		Status:  true,
 		Message: "Login Successfully",
-		Data : AuthData{
-			AccessToken: token,
+		Data: AuthData{
+			AccessToken:  tokenBearer,
 			RefreshToken: refresh_token,
 			User: UserResponse{
-				ID : user.ID,
+				ID:   user.ID,
 				Name: user.Name,
 			},
 		},
 	}, nil
 }
 
+// RefreshToken menukar refresh token yang sah dengan access token baru.
+// Refresh token diverifikasi signature + exp + type, lalu user-nya
+// dipastikan masih ada di database (misal akun sudah dihapus).
+func (s *service) RefreshToken(req RefreshTokenRequest) (RefreshTokenData, error) {
+	if req.RefreshToken == "" {
+		return RefreshTokenData{}, errors.New("refresh token wajib diisi")
+	}
 
+	userID, err := utils.ValidateRefreshToken(req.RefreshToken)
+	if err != nil {
+		return RefreshTokenData{}, errors.New("refresh token tidak valid atau sudah kedaluwarsa")
+	}
 
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return RefreshTokenData{}, errors.New("user tidak ditemukan")
+	}
 
+	accessToken, err := utils.GenerateJWT(user.ID, user.Email)
+	if err != nil {
+		return RefreshTokenData{}, errors.New("gagal membuat access token")
+	}
+
+	// Rotasi refresh token: yang lama tidak dipakai lagi oleh klien.
+	newRefreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return RefreshTokenData{}, errors.New("gagal membuat refresh token")
+	}
+
+	return RefreshTokenData{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+	}, nil
+}

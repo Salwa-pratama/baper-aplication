@@ -2,8 +2,10 @@ package products
 
 import "time"
 
+// CreateProductRequest — business_id sengaja DIHAPUS dari body.
+// Backend menentukannya dari JWT, supaya user tidak bisa menitipkan
+// produk ke bisnis milik orang lain.
 type CreateProductRequest struct {
-	BusinessID  string  `json:"business_id" validate:"required"`
 	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price" validate:"required"`

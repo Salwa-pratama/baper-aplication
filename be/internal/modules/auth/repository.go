@@ -9,32 +9,40 @@ import (
 // Interface
 type Repository interface {
 	FindByEmail(email string) (*models.User, error)
+	FindByID(id string) (*models.User, error)
 	CreateUser(user *models.User) error
 	CreateUserAndBusiness(user *models.User, business *models.Business) error
 }
-
 
 // Struct
 type repository struct {
 	db *gorm.DB
 }
 
-
 // Main Function
 func NewAuthRepository(db *gorm.DB) Repository {
-	return  &repository{db}
+	return &repository{db}
 }
-
-
-
 
 // Untuk mencari user berdasarkan email
-func (r *repository) FindByEmail(email string) (*models.User, error ) {
+func (r *repository) FindByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.db.Where("email = ?", email).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
+// Untuk mencari user berdasarkan ID (dipakai saat refresh token)
+func (r *repository) FindByID(id string) (*models.User, error) {
+	var user models.User
+	err := r.db.Where("id = ?", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
 
 // Untuk register akun baru (User Saja)
 func (r *repository) CreateUser(user *models.User) error {

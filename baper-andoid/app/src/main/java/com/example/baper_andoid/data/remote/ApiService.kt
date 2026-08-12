@@ -1,6 +1,7 @@
 package com.example.baper_andoid.data.remote
 
 import com.example.baper_andoid.data.remote.dto.request.LoginRequest
+import com.example.baper_andoid.data.remote.dto.request.RefreshTokenRequest
 import com.example.baper_andoid.data.remote.dto.request.RegisterRequest
 import com.example.baper_andoid.data.remote.dto.request.UpdateBotRequest
 import com.example.baper_andoid.data.remote.dto.request.ProductRequest
@@ -8,12 +9,12 @@ import com.example.baper_andoid.data.remote.dto.request.SendMessageRequest
 import com.example.baper_andoid.data.remote.dto.request.SendMediaRequest
 import com.example.baper_andoid.data.remote.dto.response.BotResponse
 import com.example.baper_andoid.data.remote.dto.response.LoginResponse
+import com.example.baper_andoid.data.remote.dto.response.RefreshTokenResponse
 import com.example.baper_andoid.data.remote.dto.response.RegisterResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductListResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductDetailResponse
 import com.example.baper_andoid.data.remote.dto.response.ChatResponse
-import okhttp3.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -21,8 +22,11 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
-import retrofit2.http.Query
 
+/**
+ * BASE_URL sudah berakhir dengan "/api/", jadi path di sini TIDAK boleh
+ * diawali "api/" lagi — kalau tidak URL-nya jadi /api/api/products (404).
+ */
 interface ApiService {
 
     @POST("auth/login")
@@ -31,55 +35,55 @@ interface ApiService {
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): RegisterResponse
 
-    @PUT("api/bots/{id}/prompt")
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): RefreshTokenResponse
+
+    @PUT("bots/{id}/prompt")
     suspend fun updateBotPrompt(
         @Path("id") id: String,
         @Body request: UpdateBotRequest
     ): BotResponse
 
-    @PATCH("api/bots/{id}/toggle")
+    @PATCH("bots/{id}/toggle")
     suspend fun toggleBotStatus(
         @Path("id") id: String
     ): BotResponse
 
-    // Product CRUD
-    @GET("api/products")
-    suspend fun getProducts(
-        @Query("business_id") businessId: String
-    ): ProductListResponse
+    // Product CRUD.
+    // business_id tidak lagi dikirim: backend mengambilnya dari JWT
+    // supaya user tidak bisa membaca/menulis produk bisnis orang lain.
+    @GET("products")
+    suspend fun getProducts(): ProductListResponse
 
-    @POST("api/products")
+    @POST("products")
     suspend fun createProduct(
         @Body request: ProductRequest
     ): ProductResponse
 
-    @GET("api/products/{id}")
+    @GET("products/{id}")
     suspend fun getProductById(
         @Path("id") id: String
     ): ProductDetailResponse
 
-    @PUT("api/products/{id}")
+    @PUT("products/{id}")
     suspend fun updateProduct(
         @Path("id") id: String,
         @Body request: ProductRequest
     ): ProductResponse
 
-    @DELETE("api/products/{id}")
+    @DELETE("products/{id}")
     suspend fun deleteProduct(
         @Path("id") id: String
     ): ProductResponse
 
-    // Webhook / Chat
-    @POST("api/webhook/send-message")
+    // Webhook / Chat — butuh Bearer token.
+    @POST("webhook/send-message")
     suspend fun sendMessage(
         @Body request: SendMessageRequest
     ): ChatResponse
 
-    @POST("api/webhook/send-media")
+    @POST("webhook/send-media")
     suspend fun sendMedia(
         @Body request: SendMediaRequest
     ): ChatResponse
-
-    @GET("api/stores")
-    suspend fun getAllStores(): List<Any> // ganti sesuai response backend kamu
 }

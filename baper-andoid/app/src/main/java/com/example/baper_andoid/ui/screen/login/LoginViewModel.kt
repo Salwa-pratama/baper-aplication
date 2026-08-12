@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 sealed class LoginState {
     object Idle : LoginState()
     object Loading : LoginState()
-    data class Success(val token : String) : LoginState()
-    data class Error(val message: String ) : LoginState()
+    data class Success(val token: String) : LoginState()
+    data class Error(val message: String) : LoginState()
 }
 
 class LoginViewModel(
@@ -23,8 +23,7 @@ class LoginViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
-    val loginState : StateFlow<LoginState> = _loginState.asStateFlow()
-
+    val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
@@ -32,18 +31,26 @@ class LoginViewModel(
             try {
                 val response = authRepository.login(email, password)
                 val authData = response.data
+                val accessToken = authData?.accesstoken
 
-                if (response.status && authData?.accesstoken != null) {
-                    // Simpan token ke DataStore
-                    userPreferences.saveAuthToken(authData.accesstoken)
-                    
-                    _loginState.value = LoginState.Success(authData.accesstoken)
-                    Log.d("LoginViewModel", "Login Success & Token Saved")
+                if (response.status && !accessToken.isNullOrEmpty()) {
+                    // Simpan access token + refresh token + identitas user.
+                    // Refresh token dipakai OkHttp interceptor saat access
+                    // token kedaluwarsa (72 jam), supaya user tidak perlu
+                    // login ulang setiap kali token habis.
+                    userPreferences.saveSession(
+                        accessToken = accessToken,
+                        refreshToken = authData.refreshtoken,
+                        userId = authData.user?.id,
+                        userName = authData.user?.name
+                    )
+
+                    _loginState.value = LoginState.Success(accessToken)
+                    Log.d("LoginViewModel", "Login Success & Session Saved")
                 } else {
-                    val errorMsg = response.message
-                    _loginState.value = LoginState.Error(errorMsg)
+                    _loginState.value = LoginState.Error(response.message)
                 }
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 val errorMsg = e.localizedMessage ?: "Terjadi kesalahan koneksi"
                 _loginState.value = LoginState.Error(errorMsg)
             }

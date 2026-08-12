@@ -6,21 +6,22 @@ import com.example.baper_andoid.data.remote.dto.response.ProductDetailResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductListResponse
 import com.example.baper_andoid.data.remote.dto.response.ProductResponse
 
+/**
+ * businessId tidak lagi jadi parameter: backend mengambilnya dari token.
+ */
 class ProductRepository(private val apiService: ApiService) {
 
-    suspend fun getProducts(businessId: String): ProductListResponse {
-        return apiService.getProducts(businessId)
+    suspend fun getProducts(): ProductListResponse {
+        return apiService.getProducts()
     }
 
     suspend fun createProduct(
-        businessId: String,
         name: String,
         description: String,
         price: Int,
         stock: Int
     ): ProductResponse {
         val request = ProductRequest(
-            businessId = businessId,
             name = name,
             description = description,
             price = price,
@@ -35,14 +36,12 @@ class ProductRepository(private val apiService: ApiService) {
 
     suspend fun updateProduct(
         id: String,
-        businessId: String,
         name: String,
         description: String,
         price: Int,
         stock: Int
     ): ProductResponse {
         val request = ProductRequest(
-            businessId = businessId,
             name = name,
             description = description,
             price = price,

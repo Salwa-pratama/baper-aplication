@@ -6,7 +6,6 @@ import (
 	"log"
 )
 
-
 func main() {
 	log.Printf("Running AutoMigrate....")
 	db := config.DbSupabase()
@@ -17,6 +16,5 @@ func main() {
 		log.Fatal("Migration failed : ", err)
 	}
 
-
-	log.Printf("Migrasi berhasil dengan migration id : " + migration_id)
+	log.Printf("Migrasi berhasil dengan migration id : %s", migration_id)
 }

@@ -61,6 +61,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "Tukar refresh token yang masih berlaku dengan access token baru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh Access Token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "description": "Register a new user into the system",
@@ -103,7 +149,12 @@ const docTemplate = `{
         },
         "/api/bots/{id}/prompt": {
             "put": {
-                "description": "Update the AI Agent Prompt and API configuration for the bot",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update Agent Prompt/API bot milik bisnis sendiri.",
                 "consumes": [
                     "application/json"
                 ],
@@ -145,6 +196,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/res.Response"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -156,7 +213,12 @@ const docTemplate = `{
         },
         "/api/bots/{id}/toggle": {
             "patch": {
-                "description": "Enable or disable the AI bot for a specific business",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Enable/disable bot milik bisnis sendiri. Bot milik orang lain dijawab 404.",
                 "consumes": [
                     "application/json"
                 ],
@@ -185,6 +247,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/res.Response"
                         }
@@ -346,9 +414,160 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/conversations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Daftar semua chat session milik bisnis user yang sedang login, beserta nama customer, nomor WhatsApp, dan preview pesan terakhir. Dipakai untuk layar daftar chat. Diurutkan dari aktivitas terbaru.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conversations"
+                ],
+                "summary": "Daftar percakapan (chat list)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/res.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/conversation.ConversationResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/conversations/{id}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ambil seluruh pesan dari satu chat session beserta identitas customer-nya. Endpoint ini yang dipanggil ketika card customer di daftar chat ditekan. Percakapan milik bisnis lain dijawab 404.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conversations"
+                ],
+                "summary": "Pesan dalam satu percakapan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chat Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah maksimum pesan (default 100, maks 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset paging (default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/res.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/conversation.ConversationDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/products": {
             "get": {
-                "description": "Get a list of all products, optionally filtered by business ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get products milik bisnis user yang sedang login.",
                 "consumes": [
                     "application/json"
                 ],
@@ -359,17 +578,15 @@ const docTemplate = `{
                     "Products"
                 ],
                 "summary": "Get All Products",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business ID",
-                        "name": "business_id",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/res.Response"
                         }
@@ -383,7 +600,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new product for a business",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new product. business_id diambil dari token, bukan dari body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -418,6 +640,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/res.Response"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -429,7 +657,12 @@ const docTemplate = `{
         },
         "/api/products/{id}": {
             "get": {
-                "description": "Get detailed information about a specific product",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get detail produk. Produk milik bisnis lain dijawab 404.",
                 "consumes": [
                     "application/json"
                 ],
@@ -462,6 +695,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/res.Response"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -471,7 +710,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update an existing product's details",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update produk milik bisnis sendiri.",
                 "consumes": [
                     "application/json"
                 ],
@@ -513,6 +757,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/res.Response"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -522,7 +772,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a product by its ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hapus produk milik bisnis sendiri.",
                 "consumes": [
                     "application/json"
                 ],
@@ -551,6 +806,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/res.Response"
                         }
@@ -829,6 +1090,17 @@ const docTemplate = `{
                 }
             }
         },
+        "auth.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "auth.RegisterRequest": {
             "type": "object",
             "required": [
@@ -1050,17 +1322,107 @@ const docTemplate = `{
                 }
             }
         },
+        "conversation.ConversationDetailResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "customer_phone": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.MessageResponse"
+                    }
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationResponse": {
+            "type": "object",
+            "properties": {
+                "bot_id": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "description": "Data customer, di-flatten supaya klien tidak perlu nested lookup.",
+                    "type": "string"
+                },
+                "customer_phone": {
+                    "type": "string"
+                },
+                "ended_at": {
+                    "type": "string"
+                },
+                "last_message": {
+                    "description": "Ringkasan pesan terakhir untuk preview di card.",
+                    "type": "string"
+                },
+                "last_message_at": {
+                    "type": "string"
+                },
+                "last_message_sender": {
+                    "type": "string"
+                },
+                "message_count": {
+                    "description": "MessageCount = total pesan dalam sesi ini.\n\nCATATAN: kolom read/unread TIDAK ADA di skema database saat ini\n(models.Message hanya punya created_at). Jadi unread_count belum bisa\ndihitung dan sengaja tidak disertakan daripada mengirim angka palsu.",
+                    "type": "integer"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "sender_type": {
+                    "description": "SenderType bernilai \"customer\" atau \"bot\" (lihat chat/service.go).",
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
         "products.CreateProductRequest": {
             "type": "object",
             "required": [
-                "business_id",
                 "name",
                 "price"
             ],
             "properties": {
-                "business_id": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },

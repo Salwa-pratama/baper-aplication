@@ -9,15 +9,18 @@ import (
 
 // User Model
 type User struct {
-	ID           string    `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Email        string    `gorm:"unique;type:varchar(100);not null" json:"email"`
-	PasswordHash string    `gorm:"type:varchar(255);not null" json:"password_hash"`
+	ID    string `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Email string `gorm:"unique;type:varchar(100);not null" json:"email"`
+	// PasswordHash TIDAK BOLEH ikut ter-serialize ke response JSON.
+	// json:"-" memastikan hash password tidak pernah bocor ke klien
+	// walau model User ini suatu saat dikirim langsung sebagai response.
+	PasswordHash string    `gorm:"type:varchar(255);not null" json:"-"`
 	Name         string    `gorm:"type:varchar(100);not null" json:"name"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 
-	AuthTokens []AuthToken `gorm:"foreignKey:UserID" json:"auth_tokens"`
-	Business *Business  `gorm:"foreignKey:UserID" json:"business"`
+	AuthTokens []AuthToken `gorm:"foreignKey:UserID" json:"auth_tokens,omitempty"`
+	Business   *Business   `gorm:"foreignKey:UserID" json:"business,omitempty"`
 }
 
 // Hook ini otomatis kepanggil GORM sebelum proses INSERT

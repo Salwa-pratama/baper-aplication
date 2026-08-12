@@ -10,6 +10,13 @@ definitions:
     - email
     - password
     type: object
+  auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   auth.RegisterRequest:
     properties:
       business_address:
@@ -156,10 +163,76 @@ definitions:
       object:
         type: string
     type: object
+  conversation.ConversationDetailResponse:
+    properties:
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/conversation.MessageResponse'
+        type: array
+      session_id:
+        type: string
+      status:
+        type: string
+    type: object
+  conversation.ConversationResponse:
+    properties:
+      bot_id:
+        type: string
+      customer_id:
+        type: string
+      customer_name:
+        description: Data customer, di-flatten supaya klien tidak perlu nested lookup.
+        type: string
+      customer_phone:
+        type: string
+      ended_at:
+        type: string
+      last_message:
+        description: Ringkasan pesan terakhir untuk preview di card.
+        type: string
+      last_message_at:
+        type: string
+      last_message_sender:
+        type: string
+      message_count:
+        description: |-
+          MessageCount = total pesan dalam sesi ini.
+
+          CATATAN: kolom read/unread TIDAK ADA di skema database saat ini
+          (models.Message hanya punya created_at). Jadi unread_count belum bisa
+          dihitung dan sengaja tidak disertakan daripada mengirim angka palsu.
+        type: integer
+      session_id:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+    type: object
+  conversation.MessageResponse:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      metadata:
+        type: string
+      sender_type:
+        description: SenderType bernilai "customer" atau "bot" (lihat chat/service.go).
+        type: string
+      session_id:
+        type: string
+    type: object
   products.CreateProductRequest:
     properties:
-      business_id:
-        type: string
       description:
         type: string
       name:
@@ -169,7 +242,6 @@ definitions:
       stock:
         type: integer
     required:
-    - business_id
     - name
     - price
     type: object
@@ -232,6 +304,36 @@ paths:
       summary: Login User
       tags:
       - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Tukar refresh token yang masih berlaku dengan access token baru.
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
+      summary: Refresh Access Token
+      tags:
+      - Auth
   /api/auth/register:
     post:
       consumes:
@@ -262,7 +364,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update the AI Agent Prompt and API configuration for the bot
+      description: Update Agent Prompt/API bot milik bisnis sendiri.
       parameters:
       - description: Bot ID
         in: path
@@ -286,10 +388,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Update Bot Prompt & API
       tags:
       - Bot
@@ -297,7 +405,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Enable or disable the AI bot for a specific business
+      description: Enable/disable bot milik bisnis sendiri. Bot milik orang lain dijawab
+        404.
       parameters:
       - description: Bot ID
         in: path
@@ -315,10 +424,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Toggle Bot Active Status
       tags:
       - Bot
@@ -416,16 +531,103 @@ paths:
       summary: Register a Business
       tags:
       - Business
+  /api/conversations:
+    get:
+      consumes:
+      - application/json
+      description: Daftar semua chat session milik bisnis user yang sedang login,
+        beserta nama customer, nomor WhatsApp, dan preview pesan terakhir. Dipakai
+        untuk layar daftar chat. Diurutkan dari aktivitas terbaru.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/res.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/conversation.ConversationResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
+      summary: Daftar percakapan (chat list)
+      tags:
+      - Conversations
+  /api/conversations/{id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Ambil seluruh pesan dari satu chat session beserta identitas customer-nya.
+        Endpoint ini yang dipanggil ketika card customer di daftar chat ditekan. Percakapan
+        milik bisnis lain dijawab 404.
+      parameters:
+      - description: Chat Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Jumlah maksimum pesan (default 100, maks 200)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset paging (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/res.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/conversation.ConversationDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
+      summary: Pesan dalam satu percakapan
+      tags:
+      - Conversations
   /api/products:
     get:
       consumes:
       - application/json
-      description: Get a list of all products, optionally filtered by business ID
-      parameters:
-      - description: Business ID
-        in: query
-        name: business_id
-        type: string
+      description: Get products milik bisnis user yang sedang login.
       produces:
       - application/json
       responses:
@@ -433,17 +635,24 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Get All Products
       tags:
       - Products
     post:
       consumes:
       - application/json
-      description: Create a new product for a business
+      description: Create a new product. business_id diambil dari token, bukan dari
+        body.
       parameters:
       - description: Product Data
         in: body
@@ -462,10 +671,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Create a Product
       tags:
       - Products
@@ -473,7 +688,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a product by its ID
+      description: Hapus produk milik bisnis sendiri.
       parameters:
       - description: Product ID
         in: path
@@ -491,17 +706,23 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Delete Product
       tags:
       - Products
     get:
       consumes:
       - application/json
-      description: Get detailed information about a specific product
+      description: Get detail produk. Produk milik bisnis lain dijawab 404.
       parameters:
       - description: Product ID
         in: path
@@ -519,17 +740,23 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Get Product by ID
       tags:
       - Products
     put:
       consumes:
       - application/json
-      description: Update an existing product's details
+      description: Update produk milik bisnis sendiri.
       parameters:
       - description: Product ID
         in: path
@@ -553,10 +780,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/res.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.Response'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/res.Response'
+      security:
+      - BearerAuth: []
       summary: Update Product
       tags:
       - Products

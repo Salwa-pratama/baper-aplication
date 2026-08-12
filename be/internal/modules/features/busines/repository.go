@@ -10,14 +10,13 @@ import (
 )
 
 type Repository interface {
-	CreateBusiness(ctx context.Context,userID string,busines *models.Business) error
-	ExistingBusiness(ctx context.Context,userID string, name string ) (*models.Business, error)
+	CreateBusiness(ctx context.Context, userID string, busines *models.Business) error
+	ExistingBusiness(ctx context.Context, userID string, name string) (*models.Business, error)
 	FindBusinessByUserID(ctx context.Context, userID string) (*models.Business, error)
-	AddProduct(ctx context.Context,product *models.Product) error
+	AddProduct(ctx context.Context, product *models.Product) error
 	ExistingCustomer(ctx context.Context, custId string) error
 	GetMonthlyRecap(ctx context.Context, businessID string, startDate, endDate string) (*MonthlyRecapResponse, error)
 }
-
 
 type repository struct {
 	db *gorm.DB
@@ -62,19 +61,13 @@ func (r *repository) FindBusinessByUserID(ctx context.Context, userID string) (*
 	return &business, nil
 }
 
-
-
 // Berguna untuk membuat suatu product
-func (r *repository) AddProduct(ctx context.Context,product *models.Product) error {
+func (r *repository) AddProduct(ctx context.Context, product *models.Product) error {
 	return r.db.WithContext(ctx).Create(product).Error
 }
 func (r *repository) ExistingCustomer(ctx context.Context, custId string) error {
 	var customer models.Customer
 	return r.db.WithContext(ctx).Where("id = ?", custId).First(&customer).Error
-}
-
-func (r *repository) AddCustomer(ctx context.Context,customer *models.Product) error {
-	return r.db.WithContext(ctx).Create(customer).Error
 }
 
 func (r *repository) GetMonthlyRecap(ctx context.Context, businessID string, startDate, endDate string) (*MonthlyRecapResponse, error) {
