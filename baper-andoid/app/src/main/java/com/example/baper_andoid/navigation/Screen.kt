@@ -8,5 +8,10 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object ChatDetail : Screen("chat_detail")
     object BotStatus : Screen("bot_status")
-    object LihatPesanan : Screen("lihat_pesanan")
+    object LihatPesanan : Screen("lihat_pesanan?tabIndex={tabIndex}") {
+        fun createRoute(tabIndex: Int) = "lihat_pesanan?tabIndex=$tabIndex"
+    }
+    object RekapDetail : Screen("rekap_detail/{month}") {
+        fun createRoute(month: String) = "rekap_detail/$month"
+    }
 }

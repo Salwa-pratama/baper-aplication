@@ -42,6 +42,7 @@ import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.profil.ProfilScreen
+import com.example.baper_andoid.ui.screen.rekap.RekapScreen
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,7 +56,8 @@ fun HomeScreen(
     onLogout: () -> Unit,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
-    onNavigateToLihatPesanan: () -> Unit
+    onNavigateToLihatPesanan: (Int) -> Unit,
+    onNavigateToRekapDetail: (String) -> Unit
 ) {
     val context = LocalContext.current
     val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
@@ -143,7 +145,9 @@ fun HomeScreen(
                             }
                         }
                     ) {
-                        PlaceholderPage(title = "Halaman Rekap")
+                        RekapScreen(
+                            onNavigateToRekapDetail = onNavigateToRekapDetail
+                        )
                     }
                 }
                 composable(BottomNavItem.Profil.route) {
@@ -180,7 +184,7 @@ fun DashboardContent(
     botViewModel: BotViewModel,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
-    onNavigateToLihatPesanan: () -> Unit
+    onNavigateToLihatPesanan: (Int) -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -236,7 +240,7 @@ fun DashboardContent(
                     textColor = textColorPrimary,
                     botViewModel = botViewModel,
                     onNavigateToBotStatus = onNavigateToBotStatus,
-                    onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                    onNavigateToLihatPesanan = { onNavigateToLihatPesanan(0) }
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -439,7 +443,7 @@ fun QuickActionsSection(
     textColor: Color, 
     botViewModel: BotViewModel,
     onNavigateToBotStatus: () -> Unit,
-    onNavigateToLihatPesanan: () -> Unit
+    onNavigateToLihatPesanan: (Int) -> Unit
 ) {
     val isBotActive by botViewModel.isBotActive
     
@@ -453,7 +457,7 @@ fun QuickActionsSection(
             brandColor = brandGreen,
             textColor = textColor,
             modifier = Modifier.weight(1f),
-            onClick = onNavigateToLihatPesanan
+            onClick = { onNavigateToLihatPesanan(0) }
         )
         QuickActionButton(
             title = "Cek Status Bot",
