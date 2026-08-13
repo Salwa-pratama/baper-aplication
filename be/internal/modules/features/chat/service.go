@@ -214,6 +214,30 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 			}
 		}
 
+		// Fetch Customer Orders
+		customerOrders, _ := s.repo.GetCustomerOrders(customerData.ID)
+		if len(customerOrders) > 0 {
+			productsStr += "\n\n--- INFORMASI TAMBAHAN ---\n"
+			productsStr += "RIWAYAT PESANAN CUSTOMER INI:\n"
+			for i, o := range customerOrders {
+				statusStr := "Belum Bayar"
+				if string(o.Status) == "paid" {
+					statusStr = "Sudah Lunas"
+				} else if string(o.Status) == "unpaid" {
+					statusStr = "Belum Bayar"
+				}
+				productsStr += fmt.Sprintf("Pesanan %d (Status: %s, Total: Rp %.2f):\n", i+1, statusStr, o.TotalAmount)
+				for _, item := range o.OrderItems {
+					prodName := "Produk"
+					if item.Product.Name != "" {
+						prodName = item.Product.Name
+					}
+					productsStr += fmt.Sprintf(" - %s x %d\n", prodName, item.Quantity)
+				}
+			}
+			productsStr += "Jika customer menanyakan pesanannya, beri tahu berdasarkan riwayat di atas."
+		}
+
 		// 5. Build RAG Prompt context
 		content, gagal := s.repo.GenerateContent(botData.AgentPrompt, historyMsgs, productsStr, msgBody)
 		if gagal != nil {
