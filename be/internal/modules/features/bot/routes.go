@@ -14,6 +14,7 @@ func InitRoutes(app fiber.Router, db *gorm.DB) {
 
 	// Semua endpoint bot wajib token — sebelumnya terbuka untuk publik.
 	botRoutes := app.Group("/bots", middleware.AuthMiddleware())
+	botRoutes.Get("/mine", controller.GetMyBot)
 	botRoutes.Patch("/:id/toggle", controller.ToggleBotStatus)
 	botRoutes.Put("/:id/prompt", controller.UpdateBotPrompt)
 }

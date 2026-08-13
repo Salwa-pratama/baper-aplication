@@ -8,7 +8,7 @@ data class ProductResponse(
     @SerializedName("message")
     val message: String,
     @SerializedName("data")
-    val data: String?
+    val data: ProductItem?
 )
 
 data class ProductItem(

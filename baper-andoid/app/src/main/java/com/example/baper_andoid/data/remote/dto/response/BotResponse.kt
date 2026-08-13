@@ -8,5 +8,5 @@ data class BotResponse(
     @SerializedName("message")
     val message: String,
     @SerializedName("data")
-    val data: String?
+    val data: Any?
 )

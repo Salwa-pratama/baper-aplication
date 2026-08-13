@@ -2,9 +2,14 @@ package com.example.baper_andoid.data.repository
 
 import com.example.baper_andoid.data.remote.ApiService
 import com.example.baper_andoid.data.remote.dto.request.UpdateBotRequest
+import com.example.baper_andoid.data.remote.dto.response.BotDetailResponse
 import com.example.baper_andoid.data.remote.dto.response.BotResponse
 
 class BotRepository(private val apiService: ApiService) {
+
+    suspend fun getMyBot(): BotDetailResponse {
+        return apiService.getMyBot()
+    }
 
     suspend fun updateBotPrompt(
         id: String,

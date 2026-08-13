@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.TableView
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,8 +31,10 @@ data class RekapData(
     val amount: String
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RekapScreen(
+    viewModel: RekapViewModel,
     onNavigateToRekapDetail: (String) -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
@@ -39,45 +42,41 @@ fun RekapScreen(
     val textColorSecondary = Color(0xFF64748B)
 
     var selectedYear by remember { mutableStateOf("2026") }
-    val years = listOf("2026", "2025", "2024")
-
-    val reports = listOf(
-        RekapData("REKAP-Agust-2026", "Agustus", "Cek pendapatan anda selama bulan agustus", "Rp 205.000"),
-        RekapData("REKAP-Juli-2026", "Juli", "Cek pendapatan anda selama bulan juli", "Rp 1.450.000"),
-        RekapData("REKAP-Juni-2026", "Juni", "Cek pendapatan anda selama bulan juni", "Rp 890.000"),
-        RekapData("REKAP-Mei-2026", "Mei", "Cek pendapatan anda selama bulan mei", "Rp 1.120.000"),
-        RekapData("REKAP-April-2026", "April", "Cek pendapatan anda selama bulan april", "Rp 675.000")
-    )
+    val years = viewModel.availableYears
+    
+    val rekapDataMap by viewModel.rekapDataMap.collectAsState()
+    val reports = rekapDataMap[selectedYear] ?: emptyList()
+    val isRefreshing by viewModel.isLoading.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(bgGray)
-            .statusBarsPadding() // Menambahkan padding status bar agar aman tapi tetap rapat
+            .statusBarsPadding()
             .padding(horizontal = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp)) // Dikurangi dari 24.dp
+        Spacer(modifier = Modifier.height(16.dp))
         
         Text(
             text = "Rekap Bulanan",
-            fontSize = 22.sp, // Sedikit diperkecil dari 24.sp
+            fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
             fontFamily = InterFamily,
             color = Color.Black
         )
         Text(
             text = selectedYear,
-            fontSize = 13.sp, // Sedikit diperkecil dari 14.sp
+            fontSize = 13.sp,
             color = textColorSecondary,
             fontFamily = InterFamily
         )
 
-        Spacer(modifier = Modifier.height(12.dp)) // Dikurangi dari 20.dp
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Year Selection Chips
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp), // Dikurangi dari 12.dp
-            contentPadding = PaddingValues(bottom = 8.dp) // Dikurangi dari 16.dp
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             items(years) { year ->
                 val isSelected = year == selectedYear
@@ -110,19 +109,26 @@ fun RekapScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp)) // Dikurangi dari 8.dp
+        Spacer(modifier = Modifier.height(4.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 100.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.fetchOrders() },
+            modifier = Modifier.fillMaxSize()
         ) {
-            items(reports) { report ->
-                RekapCard(
-                    report = report, 
-                    brandGreen = brandGreen, 
-                    textColorSecondary = textColorSecondary,
-                    onClick = { onNavigateToRekapDetail(report.month) }
-                )
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 100.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(reports) { report ->
+                    RekapCard(
+                        report = report, 
+                        brandGreen = brandGreen, 
+                        textColorSecondary = textColorSecondary,
+                        onClick = { onNavigateToRekapDetail("${report.month}-$selectedYear") }
+                    )
+                }
             }
         }
     }

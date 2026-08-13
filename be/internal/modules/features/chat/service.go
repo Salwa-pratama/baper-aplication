@@ -205,8 +205,13 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		// Fetch Products
 		products, _ := s.repo.GetProductsByBusinessID(botData.BusinessID)
 		productsStr := ""
-		for _, p := range products {
-			productsStr += fmt.Sprintf("- ID: %s | %s | Harga: %.2f | Stok: %d\n", p.ID, p.Name, p.Price, p.Stock)
+		
+		if len(products) == 0 {
+			productsStr = "PERHATIAN: SAAT INI TOKO BELUM MEMILIKI PRODUK APAPUN DI DATABASE. JANGAN MENAWARKAN, MENJUAL, ATAU MENGARANG PRODUK APAPUN KEPADA CUSTOMER."
+		} else {
+			for _, p := range products {
+				productsStr += fmt.Sprintf("- ID: %s | %s | Harga: %.2f | Stok: %d\n", p.ID, p.Name, p.Price, p.Stock)
+			}
 		}
 
 		// 5. Build RAG Prompt context
@@ -261,19 +266,10 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		}
 
 		// 🔥 Panggil fungsi SendMessage untuk mengirim balasan
+		// Note: s.SendMessage() di dalamnya sudah otomatis melakukan SaveMessage ke database
 		errSend := s.SendMessage(senderPhone, cleanContent)
 		if errSend != nil {
 			log.Println("Gagal balas pesan:", errSend)
-		} else {
-			// 5. Simpan Pesan Keluar (Bot AI)
-			outgoingMsg := &models.Message{
-				SessionID:  sessionData.ID,
-				SenderType: "bot",
-				Content:    cleanContent, // Simpan cleanContent (tanpa JSON) ke history database
-			}
-			if errSaveOut := s.repo.SaveMessage(outgoingMsg); errSaveOut != nil {
-				log.Printf("Gagal menyimpan pesan bot: %v", errSaveOut)
-			}
 		}
 	}(bot, customer, session, msg.Text.Body, msg.From)
 

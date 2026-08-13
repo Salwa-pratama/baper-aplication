@@ -59,6 +59,7 @@ fun ProfilScreen(
 
     // Data dari ViewModel
     val nama by viewModel.nama
+    val businessName by viewModel.businessName
     val email by viewModel.email
     val noTelepon by viewModel.noTelepon
     val alamat by viewModel.alamat
@@ -134,6 +135,7 @@ fun ProfilScreen(
         ProfileHeader(
             brandGreen = brandGreen,
             nama = nama,
+            businessName = businessName,
             imageUri = profileImageUri,
             onImageClick = { showPhotoSheet = true }
         )
@@ -224,6 +226,7 @@ fun ProfilScreen(
 fun ProfileHeader(
     brandGreen: Color,
     nama: String,
+    businessName: String,
     imageUri: android.net.Uri?,
     onImageClick: () -> Unit
 ) {
@@ -297,7 +300,7 @@ fun ProfileHeader(
                 Text(text = nama, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = InterFamily)
                 Spacer(modifier = Modifier.height(4.dp))
                 Surface(color = Color.White.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
-                    Text(text = "Reseller - Bandung", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = Color.White, fontSize = 12.sp, fontFamily = InterFamily)
+                    Text(text = businessName, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), color = Color.White, fontSize = 12.sp, fontFamily = InterFamily)
                 }
             }
         }

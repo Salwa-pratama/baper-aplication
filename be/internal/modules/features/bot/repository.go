@@ -13,6 +13,8 @@ type Repository interface {
 	FindBusinessByUserID(userID string) (*models.Business, error)
 	UpdateActiveStatus(id string, isActive bool) error
 	UpdateBotPrompt(id string, req UpdateBotPromptRequest) error
+	GetBotByBusinessID(businessID string) (*models.Bot, error)
+	CreateBot(bot *models.Bot) error
 }
 
 type repository struct {
@@ -50,4 +52,17 @@ func (r *repository) UpdateBotPrompt(id string, req UpdateBotPromptRequest) erro
 		"agent_prompt": req.AgentPrompt,
 		"agent_api":    req.AgentAPI,
 	}).Error
+}
+
+func (r *repository) GetBotByBusinessID(businessID string) (*models.Bot, error) {
+	var bot models.Bot
+	err := r.db.Where("business_id = ?", businessID).First(&bot).Error
+	if err != nil {
+		return nil, err
+	}
+	return &bot, nil
+}
+
+func (r *repository) CreateBot(bot *models.Bot) error {
+	return r.db.Create(bot).Error
 }

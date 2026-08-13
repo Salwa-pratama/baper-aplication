@@ -19,8 +19,10 @@ import com.example.baper_andoid.ui.screen.chat.ChatScreen
 import com.example.baper_andoid.ui.screen.chat.ChatViewModel
 import com.example.baper_andoid.ui.screen.chat.ChatViewModelFactory
 import com.example.baper_andoid.data.repository.ChatRepository
+import com.example.baper_andoid.data.repository.BotRepository
 import com.example.baper_andoid.data.remote.RetrofitClient
 import com.example.baper_andoid.ui.screen.bot.BotViewModel
+import com.example.baper_andoid.ui.screen.bot.BotViewModelFactory
 import com.example.baper_andoid.ui.screen.bot.BotStatusScreen
 import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananScreen
@@ -41,9 +43,16 @@ fun NavGraph(navController: NavHostController) {
     
     val chatRepository = remember { ChatRepository(RetrofitClient.getInstance(context)) }
     val chatViewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(chatRepository))
-    val botViewModel: BotViewModel = viewModel()
-    val profilViewModel: ProfilViewModel = viewModel()
-    val lihatPesananViewModel: LihatPesananViewModel = viewModel()
+    
+    val botRepository = remember { BotRepository(RetrofitClient.getInstance(context)) }
+    val botViewModel: BotViewModel = viewModel(factory = BotViewModelFactory(botRepository))
+    
+    val profileRepository = remember { com.example.baper_andoid.data.repository.ProfileRepository(RetrofitClient.getInstance(context)) }
+    val profilViewModel: ProfilViewModel = viewModel(factory = com.example.baper_andoid.ui.screen.profil.ProfilViewModelFactory(profileRepository))
+    
+    val orderRepository = remember { com.example.baper_andoid.data.repository.OrderRepository(RetrofitClient.getInstance(context)) }
+    val lihatPesananViewModel: LihatPesananViewModel = viewModel(factory = com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananViewModelFactory(orderRepository))
+    val rekapViewModel: com.example.baper_andoid.ui.screen.rekap.RekapViewModel = viewModel(factory = com.example.baper_andoid.ui.screen.rekap.RekapViewModelFactory(orderRepository))
 
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         
@@ -106,6 +115,7 @@ fun NavGraph(navController: NavHostController) {
                 chatViewModel = chatViewModel,
                 botViewModel = botViewModel,
                 profilViewModel = profilViewModel,
+                rekapViewModel = rekapViewModel,
                 onLogout = {
                     scope.launch {
                         userPreferences.clearSession()
@@ -176,6 +186,7 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val month = backStackEntry.arguments?.getString("month") ?: ""
             RekapDetailScreen(
+                viewModel = rekapViewModel,
                 month = month,
                 onBack = { navController.popBackStack() },
                 onNavigateToChat = { chatId ->

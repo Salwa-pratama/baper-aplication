@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.example.baper_andoid.data.remote.dto.response.ProductItem
 import com.example.baper_andoid.ui.theme.InterFamily
 import java.util.Locale
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +47,7 @@ fun ProdukScreen(viewModel: ProdukViewModel) {
     val textColorSecondary = Color(0xFF64748B)
     
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     
     var searchQuery by remember { mutableStateOf("") }
     var isSearchVisible by remember { mutableStateOf(false) }
@@ -70,6 +73,14 @@ fun ProdukScreen(viewModel: ProdukViewModel) {
             showAddSheet = false
             editingProduct = null
             viewModel.resetSuccessState()
+            Toast.makeText(context, "Produk berhasil disimpan!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Logic for showing errors
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
 

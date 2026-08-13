@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.baper_andoid.ui.screen.lihatpesanan.Order
+import com.example.baper_andoid.data.remote.dto.response.OrderResponse
 import com.example.baper_andoid.ui.screen.lihatpesanan.OrderCard
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
@@ -32,7 +32,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RekapDetailScreen(
-    month: String,
+    viewModel: RekapViewModel,
+    month: String, // Expecting format "Bulan-Tahun" e.g., "Agustus-2026"
     onBack: () -> Unit,
     onNavigateToChat: (String) -> Unit
 ) {
@@ -41,17 +42,23 @@ fun RekapDetailScreen(
     val textColorPrimary = Color(0xFF0F172A)
     val textColorSecondary = Color(0xFF64748B)
 
-    val scope = rememberCoroutineScope()
-    var isRefreshing by remember { mutableStateOf(false) }
-
-    // Mock data for the specific month (only paid orders)
-    val paidOrders = listOf(
-        Order("#ORD-2026-004", "Dewi Sartika", "Paket Hemat x1", "3 $month 2026", "Rp 75.000", "Sudah Lunas", "4"),
-        Order("#ORD-2026-005", "Rian Hidayat", "Paket Premium x2", "2 $month 2026", "Rp 440.000", "Sudah Lunas", "5"),
-        Order("#ORD-2026-008", "Indra Wijaya", "Paket Premium x1", "1 $month 2026", "Rp 220.000", "Sudah Lunas", "8")
-    )
-
-    val totalAmount = paidOrders.sumOf { it.amount.replace("Rp ", "").replace(".", "").toInt() }
+    // Parse month and year
+    val parts = month.split("-")
+    val monthName = if (parts.isNotEmpty()) parts[0] else month
+    val yearStr = if (parts.size > 1) parts[1] else "2026"
+    
+    val isRefreshing by viewModel.isLoading.collectAsState()
+    val allOrders by viewModel.orders.collectAsState()
+    
+    // Derived state so it updates when orders change
+    val paidOrders = allOrders.filter { 
+        it.date.contains("$monthName $yearStr", ignoreCase = true) && it.status == "Sudah Lunas" 
+    }
+    
+    val totalAmount = paidOrders.sumOf { 
+        val amt = it.amount.replace("Rp ", "").replace(".", "")
+        amt.toIntOrNull() ?: 0
+    }
 
     Scaffold(
         containerColor = bgGray,
@@ -119,13 +126,7 @@ fun RekapDetailScreen(
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true
-                scope.launch {
-                    delay(2000)
-                    isRefreshing = false
-                }
-            },
+            onRefresh = { viewModel.fetchOrders() },
             modifier = Modifier.padding(paddingValues)
         ) {
             LazyColumn(

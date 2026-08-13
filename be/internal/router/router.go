@@ -8,7 +8,9 @@ import (
 	"baper/internal/modules/features/busines"
 	"baper/internal/modules/features/chat"
 	"baper/internal/modules/features/conversation"
+	"baper/internal/modules/features/orders"
 	"baper/internal/modules/features/products"
+	"baper/internal/modules/features/profile"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -27,4 +29,6 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	products.InitRoutes(api, db)
 	bot.InitRoutes(api, db)
 	conversation.InitRoutes(api, db)
+	orders.InitRoutes(api, db)
+	profile.InitRoutes(api, db)
 }

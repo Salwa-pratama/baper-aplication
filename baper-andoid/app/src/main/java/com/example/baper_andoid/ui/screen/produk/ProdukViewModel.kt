@@ -18,10 +18,7 @@ data class ProdukUiState(
 
 class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(ProdukUiState(
-        productList = listOf(
-            ProductItem("dummy1", "biz1", "Contoh Produk A", "Deskripsi singkat produk contoh A", 125000, 48),
-            ProductItem("dummy2", "biz1", "Contoh Produk B", "Deskripsi singkat produk contoh B", 75000, 120)
-        )
+        productList = emptyList()
     ))
     val uiState: StateFlow<ProdukUiState> = _uiState.asStateFlow()
 
@@ -35,27 +32,17 @@ class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
             try {
                 val response = repository.getProducts()
                 if (response.status) {
-                    // Selalu tambahkan dummy di awal untuk preview, gabungkan dengan data real
-                    val dummyData = listOf(
-                        ProductItem("dummy1", "biz1", "Contoh Produk A", "Deskripsi singkat produk contoh A", 125000, 48),
-                        ProductItem("dummy2", "biz1", "Contoh Produk B", "Deskripsi singkat produk contoh B", 75000, 120)
-                    )
                     _uiState.value = _uiState.value.copy(
-                        productList = dummyData + response.data,
+                        productList = response.data,
                         error = null
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(error = response.message)
                 }
             } catch (e: Exception) {
-                // Jika error (misal belum ada internet), tetap tampilkan dummy agar UI bisa dilihat
-                val dummyData = listOf(
-                    ProductItem("dummy1", "biz1", "Contoh Produk A", "Deskripsi singkat produk contoh A", 125000, 48),
-                    ProductItem("dummy2", "biz1", "Contoh Produk B", "Deskripsi singkat produk contoh B", 75000, 120)
-                )
                 _uiState.value = _uiState.value.copy(
-                    productList = dummyData,
-                    error = "Gagal mengambil data real, menampilkan data contoh."
+                    productList = emptyList(),
+                    error = e.localizedMessage ?: "Gagal mengambil data produk"
                 )
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
