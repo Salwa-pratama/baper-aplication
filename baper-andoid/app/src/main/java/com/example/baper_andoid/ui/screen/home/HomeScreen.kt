@@ -61,7 +61,8 @@ fun HomeScreen(
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
     onNavigateToLihatPesanan: (Int) -> Unit,
-    onNavigateToRekapDetail: (String) -> Unit
+    onNavigateToRekapDetail: (String) -> Unit,
+    onNavigateToNotifikasi: () -> Unit
 ) {
     val context = LocalContext.current
     val homeRepository = remember { HomeRepository(RetrofitClient.getInstance(context)) }
@@ -120,7 +121,8 @@ fun HomeScreen(
                                 botViewModel = botViewModel,
                                 onNavigateToChat = onNavigateToChat,
                                 onNavigateToBotStatus = onNavigateToBotStatus,
-                                onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                                onNavigateToLihatPesanan = onNavigateToLihatPesanan,
+                                onNavigateToNotifikasi = onNavigateToNotifikasi
                             )
                         }
                     }
@@ -180,7 +182,8 @@ fun DashboardContent(
     botViewModel: BotViewModel,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
-    onNavigateToLihatPesanan: (Int) -> Unit
+    onNavigateToLihatPesanan: (Int) -> Unit,
+    onNavigateToNotifikasi: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -206,7 +209,8 @@ fun DashboardContent(
             DashboardHeader(
                 name = name,
                 imageUri = imageUri,
-                textColor = textColorPrimary
+                textColor = textColorPrimary,
+                onNavigateToNotifikasi = onNavigateToNotifikasi
             )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(
@@ -298,7 +302,8 @@ fun DashboardContent(
 fun DashboardHeader(
     name: String,
     imageUri: android.net.Uri?,
-    textColor: Color
+    textColor: Color,
+    onNavigateToNotifikasi: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -362,7 +367,7 @@ fun DashboardHeader(
         }
         
         IconButton(
-            onClick = {},
+            onClick = onNavigateToNotifikasi,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)

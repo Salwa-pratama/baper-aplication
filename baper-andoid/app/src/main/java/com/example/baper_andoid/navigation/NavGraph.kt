@@ -26,6 +26,7 @@ import com.example.baper_andoid.ui.screen.profil.ProfilViewModel
 import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananScreen
 import com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananViewModel
 import com.example.baper_andoid.ui.screen.rekap.RekapDetailScreen
+import com.example.baper_andoid.ui.screen.notifikasi.NotifikasiScreen
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.first
@@ -126,7 +127,16 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToRekapDetail = { month ->
                     navController.navigate(Screen.RekapDetail.createRoute(month))
+                },
+                onNavigateToNotifikasi = {
+                    navController.navigate(Screen.Notifikasi.route)
                 }
+            )
+        }
+
+        composable(Screen.Notifikasi.route) {
+            NotifikasiScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
