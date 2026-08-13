@@ -41,12 +41,62 @@ fun RekapScreen(
     val bgGray = Color(0xFFF7F9F8)
     val textColorSecondary = Color(0xFF64748B)
 
-    var selectedYear by remember { mutableStateOf("2026") }
-    val years = viewModel.availableYears
+    val years by viewModel.availableYears.collectAsState()
+    var selectedYear by remember { mutableStateOf(years.firstOrNull() ?: "2026") }
+    
+    // Auto update selected year if it's not in the list (e.g. initial load)
+    LaunchedEffect(years) {
+        if (selectedYear !in years && years.isNotEmpty()) {
+            selectedYear = years.first()
+        }
+    }
     
     val rekapDataMap by viewModel.rekapDataMap.collectAsState()
     val reports = rekapDataMap[selectedYear] ?: emptyList()
     val isRefreshing by viewModel.isLoading.collectAsState()
+    
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var showExportModal by remember { mutableStateOf(false) }
+    var selectedRekapForExport by remember { mutableStateOf<RekapData?>(null) }
+
+    if (showExportModal && selectedRekapForExport != null) {
+        AlertDialog(
+            onDismissRequest = { showExportModal = false },
+            title = {
+                Text(
+                    text = "Konfirmasi Unduh",
+                    fontFamily = InterFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Text(
+                    text = "Ingin mendownload rekap bulan ${selectedRekapForExport?.month} $selectedYear?",
+                    fontFamily = InterFamily,
+                    color = Color.Black
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.downloadRekap(context, selectedYear, selectedRekapForExport!!.month)
+                        showExportModal = false
+                    }
+                ) {
+                    Text("Download", color = brandGreen, fontWeight = FontWeight.Bold, fontFamily = InterFamily)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExportModal = false }
+                ) {
+                    Text("Batal", color = Color.Gray, fontFamily = InterFamily)
+                }
+            },
+            containerColor = Color.White
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -126,7 +176,11 @@ fun RekapScreen(
                         report = report, 
                         brandGreen = brandGreen, 
                         textColorSecondary = textColorSecondary,
-                        onClick = { onNavigateToRekapDetail("${report.month}-$selectedYear") }
+                        onClick = { onNavigateToRekapDetail("${report.month}-$selectedYear") },
+                        onExportClick = {
+                            selectedRekapForExport = report
+                            showExportModal = true
+                        }
                     )
                 }
             }
@@ -139,7 +193,8 @@ fun RekapCard(
     report: RekapData,
     brandGreen: Color,
     textColorSecondary: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onExportClick: () -> Unit = {}
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Card(
@@ -237,7 +292,7 @@ fun RekapCard(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = ripple(color = Color.Gray)
-                        ) { /* Export Action */ },
+                        ) { onExportClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

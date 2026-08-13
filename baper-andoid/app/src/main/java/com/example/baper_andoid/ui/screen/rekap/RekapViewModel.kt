@@ -1,12 +1,19 @@
 package com.example.baper_andoid.ui.screen.rekap
 
+import android.content.Context
+import android.os.Environment
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.baper_andoid.data.remote.dto.response.OrderResponse
 import com.example.baper_andoid.data.repository.OrderRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.util.Locale
 
 class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
@@ -31,8 +38,8 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
     private val _currentMonthSummary = MutableStateFlow(MonthSummary())
     val currentMonthSummary: StateFlow<MonthSummary> get() = _currentMonthSummary
 
-    // Default years from the previous dummy data
-    val availableYears = listOf("2026", "2025", "2024")
+    private val _availableYears = MutableStateFlow<List<String>>(listOf(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR).toString()))
+    val availableYears: StateFlow<List<String>> get() = _availableYears
 
     init {
         fetchOrders()
@@ -47,6 +54,17 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
                 if (response.status) {
                     val ordersList = response.data ?: emptyList()
                     _orders.value = ordersList
+                    
+                    // Extract dynamic years
+                    val years = ordersList.mapNotNull { order ->
+                        val parts = order.date.split(" ")
+                        if (parts.isNotEmpty()) parts.last() else null
+                    }.distinct().filter { it.length == 4 && it.all { char -> char.isDigit() } }.sortedDescending()
+                    
+                    if (years.isNotEmpty()) {
+                        _availableYears.value = years
+                    }
+                    
                     processRecapData(ordersList)
                 } else {
                     _error.value = response.message
@@ -66,8 +84,9 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
         )
         
         val map = mutableMapOf<String, List<RekapData>>()
+        val yearsToProcess = _availableYears.value
         
-        for (year in availableYears) {
+        for (year in yearsToProcess) {
             val yearlyRekap = mutableListOf<RekapData>()
             // Iterate months backwards (December to January)
             for (month in monthNames.reversed()) {
@@ -130,6 +149,37 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
         val keyword = "$month $year"
         return _orders.value.filter { 
             it.date.contains(keyword, ignoreCase = true) && it.status == "Sudah Lunas" 
+        }
+    }
+
+    fun downloadRekap(context: Context, year: String, monthName: String) {
+        viewModelScope.launch {
+            try {
+                Toast.makeText(context, "Mempersiapkan unduhan...", Toast.LENGTH_SHORT).show()
+                val monthNames = listOf("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember")
+                val monthInt = monthNames.indexOf(monthName) + 1
+                if (monthInt == 0) {
+                    Toast.makeText(context, "Bulan tidak valid", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                
+                val response = repository.exportMonthlyRecap(year.toInt(), monthInt)
+                val fileName = "Rekap_Bulanan_${monthName}_${year}.csv"
+                
+                withContext(Dispatchers.IO) {
+                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val file = File(downloadsDir, fileName)
+                    
+                    response.byteStream().use { inputStream ->
+                        FileOutputStream(file).use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+                Toast.makeText(context, "Berhasil diunduh ke folder Downloads", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Gagal mengunduh: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 }

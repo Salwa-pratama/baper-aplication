@@ -112,4 +112,11 @@ interface ApiService {
 
     @GET("profile")
     suspend fun getProfile(): com.example.baper_andoid.data.remote.dto.response.ProfileResponse
+
+    @retrofit2.http.Streaming
+    @GET("business/recap/monthly/export")
+    suspend fun exportMonthlyRecap(
+        @retrofit2.http.Query("year") year: Int,
+        @retrofit2.http.Query("month") month: Int
+    ): okhttp3.ResponseBody
 }

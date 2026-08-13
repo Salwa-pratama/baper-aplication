@@ -14,4 +14,8 @@ class OrderRepository(private val apiService: ApiService) {
     suspend fun confirmPayment(id: String): OrderActionResponse {
         return apiService.confirmPayment(id)
     }
+
+    suspend fun exportMonthlyRecap(year: Int, month: Int): okhttp3.ResponseBody {
+        return apiService.exportMonthlyRecap(year, month)
+    }
 }
