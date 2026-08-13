@@ -22,6 +22,7 @@ type Repository interface {
 	FindActiveChatSession(botID, customerID string) (*models.ChatSession, error)
 	GetRecentMessages(sessionID string, limit int) ([]models.Message, error)
 	GetProductsByBusinessID(businessID string) ([]models.Product, error)
+	GetCustomerOrders(customerID string) ([]models.Order, error)
 	// SaveOrder menyimpan order + item DAN mengurangi stok dalam satu
 	// transaksi. Stok dikunci (SELECT ... FOR UPDATE) supaya dua pesanan
 	// bersamaan tidak bisa membuat stok jadi minus.
@@ -165,6 +166,15 @@ func (r *repository) GetProductsByBusinessID(businessID string) ([]models.Produc
 	var prods []models.Product
 	err := r.db.Where("business_id = ?", businessID).Find(&prods).Error
 	return prods, err
+}
+
+func (r *repository) GetCustomerOrders(customerID string) ([]models.Order, error) {
+	var orders []models.Order
+	err := r.db.Preload("OrderItems").Preload("OrderItems.Product").
+		Where("customer_id = ?", customerID).
+		Order("created_at asc").
+		Find(&orders).Error
+	return orders, err
 }
 
 // ErrStokKurang dikembalikan jika stok tidak cukup saat order dibuat.

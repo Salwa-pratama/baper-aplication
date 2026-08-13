@@ -8,6 +8,7 @@ import com.example.baper_andoid.data.remote.dto.request.ProductRequest
 import com.example.baper_andoid.data.remote.dto.request.SendMessageRequest
 import com.example.baper_andoid.data.remote.dto.request.SendMediaRequest
 import com.example.baper_andoid.data.remote.dto.response.BotResponse
+import com.example.baper_andoid.data.remote.dto.response.BotDetailResponse
 import com.example.baper_andoid.data.remote.dto.response.LoginResponse
 import com.example.baper_andoid.data.remote.dto.response.RefreshTokenResponse
 import com.example.baper_andoid.data.remote.dto.response.RegisterResponse
@@ -39,6 +40,9 @@ interface ApiService {
 
     @POST("auth/refresh")
     suspend fun refreshToken(@Body request: RefreshTokenRequest): RefreshTokenResponse
+
+    @GET("bots/mine")
+    suspend fun getMyBot(): BotDetailResponse
 
     @PUT("bots/{id}/prompt")
     suspend fun updateBotPrompt(
@@ -96,4 +100,23 @@ interface ApiService {
     suspend fun sendMedia(
         @Body request: SendMediaRequest
     ): ChatResponse
+
+    // Orders
+    @GET("orders")
+    suspend fun getOrders(): com.example.baper_andoid.data.remote.dto.response.OrderListResponse
+
+    @PATCH("orders/{id}/status")
+    suspend fun confirmPayment(
+        @Path("id") id: String
+    ): com.example.baper_andoid.data.remote.dto.response.OrderActionResponse
+
+    @GET("profile")
+    suspend fun getProfile(): com.example.baper_andoid.data.remote.dto.response.ProfileResponse
+
+    @retrofit2.http.Streaming
+    @GET("business/recap/monthly/export")
+    suspend fun exportMonthlyRecap(
+        @retrofit2.http.Query("year") year: Int,
+        @retrofit2.http.Query("month") month: Int
+    ): okhttp3.ResponseBody
 }

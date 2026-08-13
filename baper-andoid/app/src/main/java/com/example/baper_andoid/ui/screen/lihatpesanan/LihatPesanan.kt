@@ -26,6 +26,7 @@ import java.util.Locale
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.data.remote.dto.response.OrderResponse
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,16 +42,19 @@ fun LihatPesananScreen(
     val textColorSecondary = Color(0xFF64748B)
     
     val scope = rememberCoroutineScope()
-    var isRefreshing by remember { mutableStateOf(false) }
+    val isRefreshing by viewModel.isLoading.collectAsState()
     
     var selectedTab by remember { mutableIntStateOf(initialTab) }
     val tabs = listOf("Belum Bayar", "Sudah Lunas")
 
     var showConfirmDialog by remember { mutableStateOf(false) }
-    var orderToConfirm by remember { mutableStateOf<Order?>(null) }
+    var orderToConfirm by remember { mutableStateOf<OrderResponse?>(null) }
 
     val filteredOrders = viewModel.orders.filter { it.status == tabs[selectedTab] }
-    val totalAmount = filteredOrders.sumOf { it.amount.replace("Rp ", "").replace(".", "").toInt() }
+    val totalAmount = filteredOrders.sumOf { 
+        val amt = it.amount.replace("Rp ", "").replace(".", "")
+        amt.toIntOrNull() ?: 0
+    }
 
     Scaffold(
         containerColor = bgGray,
@@ -109,11 +113,7 @@ fun LihatPesananScreen(
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {
-                isRefreshing = true
-                scope.launch {
-                    delay(2000)
-                    isRefreshing = false
-                }
+                viewModel.getOrders()
             },
             modifier = Modifier.padding(paddingValues)
         ) {
@@ -231,7 +231,7 @@ fun LihatPesananScreen(
 
 @Composable
 fun OrderCard(
-    order: Order,
+    order: OrderResponse,
     brandGreen: Color,
     textColorPrimary: Color,
     textColorSecondary: Color,

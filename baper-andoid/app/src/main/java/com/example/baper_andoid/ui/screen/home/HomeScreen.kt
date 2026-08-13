@@ -50,6 +50,7 @@ import com.example.baper_andoid.ui.screen.produk.ProdukViewModelFactory
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.ui.screen.rekap.RekapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +58,7 @@ fun HomeScreen(
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
     profilViewModel: ProfilViewModel,
+    rekapViewModel: RekapViewModel,
     onLogout: () -> Unit,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
@@ -113,12 +115,14 @@ fun HomeScreen(
                         } else {
                             val name by profilViewModel.nama
                             val imageUri by profilViewModel.profileImageUri
-                            
+                            val summary by rekapViewModel.currentMonthSummary.collectAsState()
+
                             DashboardContent(
                                 name = name,
                                 imageUri = imageUri,
                                 chatViewModel = chatViewModel,
                                 botViewModel = botViewModel,
+                                summary = summary,
                                 onNavigateToChat = onNavigateToChat,
                                 onNavigateToBotStatus = onNavigateToBotStatus,
                                 onNavigateToLihatPesanan = onNavigateToLihatPesanan,
@@ -144,6 +148,7 @@ fun HomeScreen(
                         }
                     ) {
                         RekapScreen(
+                            viewModel = rekapViewModel,
                             onNavigateToRekapDetail = onNavigateToRekapDetail
                         )
                     }
@@ -180,6 +185,7 @@ fun DashboardContent(
     imageUri: android.net.Uri?,
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
+    summary: com.example.baper_andoid.ui.screen.rekap.RekapViewModel.MonthSummary,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
     onNavigateToLihatPesanan: (Int) -> Unit,
@@ -226,7 +232,7 @@ fun DashboardContent(
             contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
         ) {
             item {
-                SummaryCard(brandGreen)
+                SummaryCard(brandGreen, summary)
                 Spacer(modifier = Modifier.height(20.dp))
             }
             
@@ -384,7 +390,7 @@ fun DashboardHeader(
 }
 
 @Composable
-fun SummaryCard(brandGreen: Color) {
+fun SummaryCard(brandGreen: Color, summary: com.example.baper_andoid.ui.screen.rekap.RekapViewModel.MonthSummary) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -402,7 +408,7 @@ fun SummaryCard(brandGreen: Color) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Rp 12.450.000",
+                text = summary.totalRevenue,
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
@@ -417,12 +423,12 @@ fun SummaryCard(brandGreen: Color) {
             ) {
                 SummaryMiniInfo(
                     label = "Lunas",
-                    value = "85",
+                    value = summary.paidCount.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryMiniInfo(
                     label = "Pending",
-                    value = "12",
+                    value = summary.pendingCount.toString(),
                     modifier = Modifier.weight(1f)
                 )
             }

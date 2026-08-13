@@ -93,3 +93,29 @@ func (c *BotController) UpdateBotPrompt(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(res.Success("Berhasil memperbarui konfigurasi bot", response))
 }
+
+// GetMyBot godoc
+// @Summary Get My Bot
+// @Description Mengambil data bot milik bisnis user yang login.
+// @Tags Bot
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} res.Response
+// @Failure 401 {object} res.Response
+// @Failure 404 {object} res.Response
+// @Failure 500 {object} res.Response
+// @Router /api/bots/mine [get]
+func (c *BotController) GetMyBot(ctx *fiber.Ctx) error {
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+
+	response, err := c.service.GetMyBot(userID)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(res.Success("Berhasil mengambil data bot", response))
+}

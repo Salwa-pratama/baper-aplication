@@ -41,6 +41,7 @@ fun BotStatusScreen(
     val isBotActive by viewModel.isBotActive
     val botPrompt by viewModel.botPrompt
     val apiKey by viewModel.apiKey
+    val isLoading by viewModel.isLoading
     
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -102,14 +103,18 @@ fun BotStatusScreen(
                 isRefreshing = isRefreshing,
                 onRefresh = {
                     isRefreshing = true
-                    scope.launch {
-                        delay(2000)
+                    viewModel.fetchMyBot {
                         isRefreshing = false
                     }
                 },
                 modifier = Modifier.padding(paddingValues)
             ) {
-                LazyColumn(
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = brandGreen)
+                    }
+                } else {
+                    LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
@@ -327,7 +332,7 @@ fun BotStatusScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
                                 
                                 Button(
-                                    onClick = { viewModel.saveApiKey() },
+                                    onClick = { viewModel.saveBotConfig() },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(52.dp),
@@ -335,13 +340,14 @@ fun BotStatusScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = brandGreen)
                                 ) {
                                     Text(
-                                        "Simpan API Key", 
+                                        "Simpan Konfigurasi Bot", 
                                         fontWeight = FontWeight.Bold, 
                                         fontSize = 15.sp,
                                         color = Color.White
                                     )
                                 }
                             }
+                        }
                         }
                     }
                 }

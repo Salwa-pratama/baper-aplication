@@ -205,8 +205,37 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		// Fetch Products
 		products, _ := s.repo.GetProductsByBusinessID(botData.BusinessID)
 		productsStr := ""
-		for _, p := range products {
-			productsStr += fmt.Sprintf("- ID: %s | %s | Harga: %.2f | Stok: %d\n", p.ID, p.Name, p.Price, p.Stock)
+		
+		if len(products) == 0 {
+			productsStr = "PERHATIAN: SAAT INI TOKO BELUM MEMILIKI PRODUK APAPUN DI DATABASE. JANGAN MENAWARKAN, MENJUAL, ATAU MENGARANG PRODUK APAPUN KEPADA CUSTOMER."
+		} else {
+			for _, p := range products {
+				productsStr += fmt.Sprintf("- ID: %s | %s | Harga: %.2f | Stok: %d\n", p.ID, p.Name, p.Price, p.Stock)
+			}
+		}
+
+		// Fetch Customer Orders
+		customerOrders, _ := s.repo.GetCustomerOrders(customerData.ID)
+		if len(customerOrders) > 0 {
+			productsStr += "\n\n--- INFORMASI TAMBAHAN ---\n"
+			productsStr += "RIWAYAT PESANAN CUSTOMER INI:\n"
+			for i, o := range customerOrders {
+				statusStr := "Belum Bayar"
+				if string(o.Status) == "paid" {
+					statusStr = "Sudah Lunas"
+				} else if string(o.Status) == "unpaid" {
+					statusStr = "Belum Bayar"
+				}
+				productsStr += fmt.Sprintf("Pesanan %d (Status: %s, Total: Rp %.2f):\n", i+1, statusStr, o.TotalAmount)
+				for _, item := range o.OrderItems {
+					prodName := "Produk"
+					if item.Product.Name != "" {
+						prodName = item.Product.Name
+					}
+					productsStr += fmt.Sprintf(" - %s x %d\n", prodName, item.Quantity)
+				}
+			}
+			productsStr += "Jika customer menanyakan pesanannya, beri tahu berdasarkan riwayat di atas."
 		}
 
 		// 5. Build RAG Prompt context
@@ -261,19 +290,10 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		}
 
 		// 🔥 Panggil fungsi SendMessage untuk mengirim balasan
+		// Note: s.SendMessage() di dalamnya sudah otomatis melakukan SaveMessage ke database
 		errSend := s.SendMessage(senderPhone, cleanContent)
 		if errSend != nil {
 			log.Println("Gagal balas pesan:", errSend)
-		} else {
-			// 5. Simpan Pesan Keluar (Bot AI)
-			outgoingMsg := &models.Message{
-				SessionID:  sessionData.ID,
-				SenderType: "bot",
-				Content:    cleanContent, // Simpan cleanContent (tanpa JSON) ke history database
-			}
-			if errSaveOut := s.repo.SaveMessage(outgoingMsg); errSaveOut != nil {
-				log.Printf("Gagal menyimpan pesan bot: %v", errSaveOut)
-			}
 		}
 	}(bot, customer, session, msg.Text.Body, msg.From)
 
