@@ -16,5 +16,4 @@ sealed class Screen(val route: String) {
     object RekapDetail : Screen("rekap_detail/{month}") {
         fun createRoute(month: String) = "rekap_detail/$month"
     }
-    object Notifikasi : Screen("notifikasi")
 }

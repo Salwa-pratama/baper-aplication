@@ -9,13 +9,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +27,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import com.example.baper_andoid.ui.theme.InterFamily
 
 data class NotifikasiItem(
@@ -32,151 +37,182 @@ data class NotifikasiItem(
     val message: String,
     val time: String,
     val icon: ImageVector,
-    val color: Color
+    val isUnread: Boolean = false,
+    val type: NotifType,
+    val actionId: String = ""
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+enum class NotifType {
+    PESANAN_BARU,
+    PEMBAYARAN_DITERIMA,
+    PESAN_BARU,
+    STOK_PENGINGAT
+}
+
 @Composable
-fun NotifikasiScreen(
-    onBack: () -> Unit
+fun NotifikasiPanelContent(
+    notifications: List<NotifikasiItem>,
+    onMarkAllRead: () -> Unit = {},
+    onSwipeUp: () -> Unit = {},
+    onNotificationClick: (NotifikasiItem) -> Unit
 ) {
-    val bgGray = Color(0xFFF7F9F8)
-    val textColorPrimary = Color(0xFF0F172A)
-    val textColorSecondary = Color(0xFF64748B)
+    val brandGreen = Color(0xFF107C42)
+    val textColorPrimary = Color(0xFF1E2924)
+    val textColorSecondary = Color(0xFF5A6E65)
+    val dividerColor = Color(0xFFE2EBE5)
+    
+    val swipeModifier = Modifier.pointerInput(Unit) {
+        detectVerticalDragGestures { change, dragAmount ->
+            if (dragAmount < -12f) {
+                onSwipeUp()
+            }
+            change.consume()
+        }
+    }
 
-    val notifications = listOf(
-        NotifikasiItem(
-            1, "Pesanan Baru!", "Anda mendapatkan pesanan baru dari Andi Wijaya.", "2 menit yang lalu", 
-            Icons.Default.ShoppingCart, Color(0xFF107C42)
-        ),
-        NotifikasiItem(
-            2, "Update Sistem", "Versi terbaru BAPER v1.2 sudah tersedia.", "1 jam yang lalu", 
-            Icons.Default.SystemUpdate, Color(0xFF3B82F6)
-        ),
-        NotifikasiItem(
-            3, "Tagihan Menunggu", "Ada 5 pesanan yang belum dikonfirmasi pembayarannya.", "3 jam yang lalu", 
-            Icons.Default.Notifications, Color(0xFFF59E0B)
-        ),
-        NotifikasiItem(
-            4, "Tips Hari Ini", "Gunakan fitur rekap otomatis untuk menghemat waktu Anda.", "Kemarin", 
-            Icons.Default.Notifications, Color(0xFF64748B)
-        )
-    )
-
-    Scaffold(
-        containerColor = bgGray,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Notifikasi", 
-                        fontSize = 18.sp, 
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = InterFamily,
-                        color = Color.Black
-                    ) 
-                },
-                navigationIcon = {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(color = Color.Gray)
-                            ) { onBack() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
-                            contentDescription = "Kembali",
-                            tint = Color.Black
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(swipeModifier)
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Notifikasi",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = InterFamily,
+                color = textColorPrimary
+            )
+            
+            Text(
+                text = "Tandai semua dibaca",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = InterFamily,
+                color = brandGreen,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { 
+                    onMarkAllRead() 
+                }
             )
         }
-    ) { paddingValues ->
+        
+        HorizontalDivider(thickness = 1.dp, color = dividerColor)
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxWidth()
+                .weight(1f, fill = false),
+            contentPadding = PaddingValues(bottom = 20.dp)
         ) {
             items(notifications) { item ->
-                NotificationCard(item, textColorPrimary, textColorSecondary)
+                NotificationRow(
+                    item = item, 
+                    brandGreen = brandGreen, 
+                    textColorPrimary = textColorPrimary, 
+                    textColorSecondary = textColorSecondary,
+                    onClick = { 
+                        onNotificationClick(item) 
+                    }
+                )
+                HorizontalDivider(thickness = 0.5.dp, color = dividerColor.copy(alpha = 0.5f))
             }
+        }
+
+        // Bottom Handle for Swipe Up
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(swipeModifier)
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(dividerColor)
+            )
         }
     }
 }
 
 @Composable
-fun NotificationCard(
+fun NotificationRow(
     item: NotifikasiItem,
+    brandGreen: Color,
     textColorPrimary: Color,
-    textColorSecondary: Color
+    textColorSecondary: Color,
+    onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 24.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Row(
+        // Icon with light green background
+        Box(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.Top
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE8F5EE)),
+            contentAlignment = Alignment.Center
         ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = brandGreen,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = InterFamily,
+                color = textColorPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = item.message,
+                fontSize = 13.sp,
+                fontFamily = InterFamily,
+                color = textColorSecondary,
+                lineHeight = 18.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = item.time,
+                fontSize = 12.sp,
+                fontFamily = InterFamily,
+                color = Color(0xFF8CA196)
+            )
+        }
+        
+        if (item.isUnread) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .padding(top = 4.dp)
+                    .size(8.dp)
                     .clip(CircleShape)
-                    .background(item.color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = null,
-                    tint = item.color,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = item.title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = InterFamily,
-                        color = textColorPrimary
-                    )
-                    Text(
-                        text = item.time,
-                        fontSize = 11.sp,
-                        fontFamily = InterFamily,
-                        color = textColorSecondary
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = item.message,
-                    fontSize = 13.sp,
-                    fontFamily = InterFamily,
-                    color = textColorSecondary,
-                    lineHeight = 18.sp
-                )
-            }
+                    .background(brandGreen)
+            )
         }
     }
 }
