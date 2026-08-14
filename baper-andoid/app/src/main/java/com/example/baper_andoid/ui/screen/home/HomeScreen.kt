@@ -1,11 +1,11 @@
 package com.example.baper_andoid.ui.screen.home
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -51,6 +51,12 @@ import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.example.baper_andoid.ui.screen.rekap.RekapViewModel
+import com.example.baper_andoid.ui.screen.notifikasi.NotifikasiPanelContent
+import com.example.baper_andoid.ui.screen.notifikasi.NotifType
+import com.example.baper_andoid.ui.screen.notifikasi.NotifikasiItem
+
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.NotificationsNone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +80,32 @@ fun HomeScreen(
     
     val uiState by homeViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
+
+    // Notification State Hoisted
+    val notificationList = remember {
+        mutableStateListOf(
+            NotifikasiItem(
+                1, "Pesanan baru", "Ada pesanan baru dari Siti Reseller - Bandu...", "2m lalu", 
+                Icons.Default.ShoppingBag, isUnread = true, type = NotifType.PESANAN_BARU, actionId = "Siti-Reseller-ID"
+            ),
+            NotifikasiItem(
+                2, "Pembayaran diterima", "Pembayaran dari Agus Sembako berhasil dit...", "1j lalu", 
+                Icons.Default.CreditCard, isUnread = true, type = NotifType.PEMBAYARAN_DITERIMA
+            ),
+            NotifikasiItem(
+                4, "Pesan baru", "Ada pesan baru dari pelanggan", "Kemarin", 
+                Icons.Outlined.ChatBubbleOutline, isUnread = true, type = NotifType.PESAN_BARU, actionId = "Agus-Sembako-ID"
+            ),
+            NotifikasiItem(
+                5, "Pengingat", "Jangan lupa untuk memperbarui stok produk h...", "5j lalu", 
+                Icons.Outlined.NotificationsNone, type = NotifType.STOK_PENGINGAT
+            )
+        )
+    }
+    
+    val hasUnread = notificationList.any { it.isUnread }
+
+    var showNotificationPanel by remember { mutableStateOf(false) }
 
     val bottomNavController = rememberNavController()
     val bgGray = Color(0xFFF7F9F8)
@@ -122,9 +154,20 @@ fun HomeScreen(
                                 chatViewModel = chatViewModel,
                                 botViewModel = botViewModel,
                                 summary = summary,
+                                hasUnreadNotifications = hasUnread,
                                 onNavigateToChat = onNavigateToChat,
                                 onNavigateToBotStatus = onNavigateToBotStatus,
-                                onNavigateToLihatPesanan = onNavigateToLihatPesanan
+                                onNavigateToLihatPesanan = onNavigateToLihatPesanan,
+                                onNotificationClick = { showNotificationPanel = true },
+                                onProfileClick = {
+                                    bottomNavController.navigate(BottomNavItem.Profil.route) {
+                                        popUpTo(bottomNavController.graph.startDestinationId) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
                             )
                         }
                     }
@@ -172,6 +215,74 @@ fun HomeScreen(
                 }
             }
         }
+
+        // Notification Overlay Panel (Slides from Top)
+        if (showNotificationPanel) {
+            // Scrim (Background Dim)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showNotificationPanel = false }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = showNotificationPanel,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .statusBarsPadding(),
+                color = Color.White,
+                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                shadowElevation = 8.dp
+            ) {
+                NotifikasiPanelContent(
+                    notifications = notificationList,
+                    onMarkAllRead = {
+                        notificationList.forEachIndexed { index, item ->
+                            notificationList[index] = item.copy(isUnread = false)
+                        }
+                    },
+                    onSwipeUp = { showNotificationPanel = false },
+                    onNotificationClick = { item ->
+                        // Mark as read
+                        val index = notificationList.indexOf(item)
+                        if (index != -1) {
+                            notificationList[index] = item.copy(isUnread = false)
+                        }
+                        
+                        showNotificationPanel = false
+                        when (item.type) {
+                            NotifType.PESANAN_BARU, NotifType.PESAN_BARU -> {
+                                if (item.actionId.isNotEmpty()) {
+                                    onNavigateToChat(item.actionId)
+                                }
+                            }
+                            NotifType.PEMBAYARAN_DITERIMA -> {
+                                onNavigateToLihatPesanan(0)
+                            }
+                            NotifType.STOK_PENGINGAT -> {
+                                bottomNavController.navigate(BottomNavItem.Produk.route) {
+                                    popUpTo(bottomNavController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -184,9 +295,12 @@ fun DashboardContent(
     chatViewModel: ChatViewModel,
     botViewModel: BotViewModel,
     summary: com.example.baper_andoid.ui.screen.rekap.RekapViewModel.MonthSummary,
+    hasUnreadNotifications: Boolean,
     onNavigateToChat: (String) -> Unit,
     onNavigateToBotStatus: () -> Unit,
-    onNavigateToLihatPesanan: (Int) -> Unit
+    onNavigateToLihatPesanan: (Int) -> Unit,
+    onNotificationClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     val brandGreen = Color(0xFF107C42)
     val bgGray = Color(0xFFF7F9F8)
@@ -212,7 +326,10 @@ fun DashboardContent(
             DashboardHeader(
                 name = name,
                 imageUri = imageUri,
-                textColor = textColorPrimary
+                textColor = textColorPrimary,
+                hasUnreadNotifications = hasUnreadNotifications,
+                onNotificationClick = onNotificationClick,
+                onProfileClick = onProfileClick
             )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(
@@ -252,37 +369,13 @@ fun DashboardContent(
             }
             
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Obrolan Terbaru",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = InterFamily,
-                        color = textColorPrimary
-                    )
-                    
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    
-                    Text(
-                        text = "Lihat Semua",
-                        color = if (isPressed) brandGreen.copy(alpha = 0.6f) else brandGreen,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = InterFamily,
-                        modifier = Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = ripple(color = Color.Gray)
-                        ) {
-                            // Logic Lihat Semua
-                        }
-                    )
-                }
+                Text(
+                    text = "Obrolan Terbaru",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = InterFamily,
+                    color = textColorPrimary
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
@@ -304,14 +397,27 @@ fun DashboardContent(
 fun DashboardHeader(
     name: String,
     imageUri: android.net.Uri?,
-    textColor: Color
+    textColor: Color,
+    hasUnreadNotifications: Boolean,
+    onNotificationClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        val interactionSource = remember { MutableInteractionSource() }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) { onProfileClick() }
+                .padding(4.dp)
+        ) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -367,19 +473,41 @@ fun DashboardHeader(
             }
         }
         
-        IconButton(
-            onClick = {},
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFF1F5F9))
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifikasi",
-                tint = textColor,
-                modifier = Modifier.size(20.dp)
-            )
+        Box(contentAlignment = Alignment.TopEnd) {
+            IconButton(
+                onClick = onNotificationClick,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF1F5F9))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifikasi",
+                    tint = textColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            if (hasUnreadNotifications) {
+                // Green Dot Indicator for Unread Notifications
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .offset(x = (-2).dp, y = (2).dp) // Merapatkan posisi ke ikon
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF107C42))
+                    )
+                }
+            }
         }
     }
 }
