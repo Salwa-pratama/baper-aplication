@@ -56,6 +56,20 @@ func (f *fakeRepo) UpdateBotPrompt(id string, _ UpdateBotPromptRequest) error {
 	return nil
 }
 
+func (f *fakeRepo) GetBotByBusinessID(businessID string) (*models.Bot, error) {
+	for _, b := range f.bots {
+		if b.BusinessID == businessID {
+			return b, nil
+		}
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (f *fakeRepo) CreateBot(bot *models.Bot) error {
+	f.bots[bot.ID] = bot
+	return nil
+}
+
 func appErrCode(t *testing.T, err error) int {
 	t.Helper()
 	var ae *apperror.AppError

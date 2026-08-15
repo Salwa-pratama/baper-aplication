@@ -51,6 +51,7 @@ func (r *repository) UpdateBotPrompt(id string, req UpdateBotPromptRequest) erro
 	return r.db.Model(&models.Bot{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"agent_prompt": req.AgentPrompt,
 		"agent_api":    req.AgentAPI,
+		"wa_number":    req.WaNumber,
 	}).Error
 }
 

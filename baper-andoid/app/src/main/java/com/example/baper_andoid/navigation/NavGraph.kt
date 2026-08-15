@@ -33,6 +33,9 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+
 @Composable
 fun NavGraph(navController: NavHostController) {
     val context = LocalContext.current
@@ -54,7 +57,34 @@ fun NavGraph(navController: NavHostController) {
     val lihatPesananViewModel: LihatPesananViewModel = viewModel(factory = com.example.baper_andoid.ui.screen.lihatpesanan.LihatPesananViewModelFactory(orderRepository))
     val rekapViewModel: com.example.baper_andoid.ui.screen.rekap.RekapViewModel = viewModel(factory = com.example.baper_andoid.ui.screen.rekap.RekapViewModelFactory(orderRepository))
 
-    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+    NavHost(
+        navController = navController, 
+        startDestination = Screen.Splash.route,
+        enterTransition = {
+            androidx.compose.animation.slideInHorizontally(
+                initialOffsetX = { it },
+                animationSpec = androidx.compose.animation.core.tween(300)
+            )
+        },
+        exitTransition = {
+            androidx.compose.animation.slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = androidx.compose.animation.core.tween(300)
+            )
+        },
+        popEnterTransition = {
+            androidx.compose.animation.slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = androidx.compose.animation.core.tween(300)
+            )
+        },
+        popExitTransition = {
+            androidx.compose.animation.slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = androidx.compose.animation.core.tween(300)
+            )
+        }
+    ) {
         
         composable(Screen.Splash.route) { _ ->
             BaperSplashScreen(

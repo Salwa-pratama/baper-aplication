@@ -22,6 +22,19 @@ class ChatRepository(private val apiService: ApiService) {
         return apiService.sendMessage(request)
     }
 
+    suspend fun uploadMedia(
+        to: String,
+        type: String,
+        file: okhttp3.MultipartBody.Part,
+        caption: String?
+    ): ChatResponse {
+        val toBody = okhttp3.RequestBody.create(okhttp3.MultipartBody.FORM, to)
+        val typeBody = okhttp3.RequestBody.create(okhttp3.MultipartBody.FORM, type)
+        val captionBody = caption?.let { okhttp3.RequestBody.create(okhttp3.MultipartBody.FORM, it) }
+        
+        return apiService.uploadMedia(toBody, typeBody, file, captionBody)
+    }
+
     suspend fun sendMedia(
         to: String,
         mediaUrl: String,

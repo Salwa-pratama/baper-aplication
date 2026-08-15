@@ -12,7 +12,9 @@ data class BotDetailData(
     @SerializedName("agent_prompt")
     val agentPrompt: String,
     @SerializedName("agent_api")
-    val agentApi: String
+    val agentApi: String,
+    @SerializedName("wa_number")
+    val waNumber: String?
 )
 
 data class BotDetailResponse(

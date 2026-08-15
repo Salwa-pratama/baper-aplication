@@ -12,6 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -43,6 +47,16 @@ fun ChatScreen(
     val messages = chatViewModel.messages
     val customerName by chatViewModel.currentCustomerName.collectAsState()
     val listState = rememberLazyListState()
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                chatViewModel.sendMediaMessage(context, uri, sessionId)
+            }
+        }
+    )
 
     fun formatUtcToLocal(utcTime: String): String {
         return try {
@@ -164,7 +178,20 @@ fun ChatScreen(
                         ),
                         shape = RoundedCornerShape(28.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { 
+                            imagePickerLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Default.AttachFile, contentDescription = "Kirim Gambar", tint = Color.Gray)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
                     FloatingActionButton(
                         onClick = { 
                             if (messageText.isNotBlank()) {
@@ -241,13 +268,35 @@ fun ChatBubble(message: String, isUser: Boolean, time: String) {
                 tonalElevation = 1.dp,
                 shadowElevation = if (isUser) 0.dp else 1.dp
             ) {
-                Text(
-                    text = message,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    color = if (isUser) Color.White else Color(0xFF0F172A),
-                    fontSize = 14.sp,
-                    fontFamily = InterFamily
-                )
+                if (message.startsWith("[IMAGE]")) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.AttachFile,
+                            contentDescription = "Gambar",
+                            tint = if (isUser) Color.White else brandGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = message.removePrefix("[IMAGE]").trim(),
+                            color = if (isUser) Color.White else Color(0xFF0F172A),
+                            fontSize = 14.sp,
+                            fontFamily = InterFamily,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                } else {
+                    Text(
+                        text = message,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        color = if (isUser) Color.White else Color(0xFF0F172A),
+                        fontSize = 14.sp,
+                        fontFamily = InterFamily
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(

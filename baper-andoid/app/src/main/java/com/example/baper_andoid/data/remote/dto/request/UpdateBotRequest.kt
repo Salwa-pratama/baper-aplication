@@ -6,5 +6,7 @@ data class UpdateBotRequest(
     @SerializedName("agent_api")
     val agentApi: String,
     @SerializedName("agent_prompt")
-    val agentPrompt: String
+    val agentPrompt: String,
+    @SerializedName("wa_number")
+    val waNumber: String
 )

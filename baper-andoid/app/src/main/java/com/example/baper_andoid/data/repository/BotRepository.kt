@@ -14,11 +14,13 @@ class BotRepository(private val apiService: ApiService) {
     suspend fun updateBotPrompt(
         id: String,
         agentApi: String,
-        agentPrompt: String
+        agentPrompt: String,
+        waNumber: String
     ): BotResponse {
         val request = UpdateBotRequest(
             agentApi = agentApi,
-            agentPrompt = agentPrompt
+            agentPrompt = agentPrompt,
+            waNumber = waNumber
         )
         return apiService.updateBotPrompt(id, request)
     }

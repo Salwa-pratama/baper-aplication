@@ -115,4 +115,61 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
             }
         }
     }
+
+    fun sendMediaMessage(context: android.content.Context, uri: android.net.Uri, sessionId: String) {
+        val toPhone = _currentCustomerPhone.value
+        viewModelScope.launch {
+            try {
+                // Konversi Uri ke File
+                val file = getFileFromUri(context, uri) ?: return@launch
+                @Suppress("DEPRECATION")
+                val requestFile = okhttp3.RequestBody.create(null, file)
+                val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                
+                val response = repository.uploadMedia(toPhone, "image", body, "")
+                if (response.status) {
+                    val currentTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                        timeZone = TimeZone.getTimeZone("UTC")
+                    }.format(Date())
+                    
+                    _messages.add(
+                        MessageItem(
+                            id = UUID.randomUUID().toString(),
+                            senderType = "bot", 
+                            content = "[IMAGE] Gambar Terkirim",
+                            metadata = "",
+                            createdAt = currentTime,
+                            sessionId = sessionId
+                        )
+                    )
+
+                    val index = _chatList.indexOfFirst { it.sessionId == sessionId }
+                    if (index != -1) {
+                        val updatedItem = _chatList[index].copy(
+                            lastMessage = "📷 Gambar Terkirim",
+                            lastMessageAt = currentTime,
+                            lastMessageSender = "bot"
+                        )
+                        _chatList[index] = updatedItem
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun getFileFromUri(context: android.content.Context, uri: android.net.Uri): java.io.File? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val tempFile = java.io.File.createTempFile("upload", ".jpg", context.cacheDir)
+            tempFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            tempFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 }

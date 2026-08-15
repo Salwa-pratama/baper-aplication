@@ -49,6 +49,7 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
                     _isBotActive.value = response.data.isActive
                     _botPrompt.value = response.data.agentPrompt
                     _apiKey.value = response.data.agentApi
+                    _botNumber.value = response.data.waNumber ?: ""
                     addLog("System", "Berhasil memuat konfigurasi bot")
                 } else {
                     addLog("System", "Gagal memuat konfigurasi bot: ${response.message}")
@@ -102,7 +103,12 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
         }
         viewModelScope.launch {
             try {
-                val response = repository.updateBotPrompt(botId, _apiKey.value, _botPrompt.value)
+                val response = repository.updateBotPrompt(
+                    botId, 
+                    _apiKey.value, 
+                    _botPrompt.value,
+                    _botNumber.value
+                )
                 if (response.status) {
                     addLog("User", "Konfigurasi (API & Prompt) berhasil disimpan")
                 } else {

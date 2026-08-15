@@ -522,7 +522,33 @@ func (s *service) SendMediaByID(to, mediaID, mediaType, caption string) error {
 		return apperror.BadRequest("Tipe media tidak didukung")
 	}
 
-	return s.sendWhatsAppPayload(payload, phoneID, accessToken)
+	err := s.sendWhatsAppPayload(payload, phoneID, accessToken)
+	if err == nil {
+		bot, errBot := s.repo.FindBotByBusinessPhone(phoneID)
+		if errBot == nil {
+			customer, errCust := s.repo.FindCustomerByPhoneAndBusiness(to, bot.BusinessID)
+			if errCust == nil {
+				session, errSess := s.repo.FindActiveChatSession(bot.ID, customer.ID)
+				if errSess == nil {
+					content := "[IMAGE] " + caption
+					if caption == "" {
+						content = "[IMAGE] Gambar Terkirim"
+					}
+					outgoingMsg := &models.Message{
+						SessionID:  session.ID,
+						SenderType: "bot", 
+						Content:    content,
+					}
+					if errSave := s.repo.SaveMessage(outgoingMsg); errSave != nil {
+						log.Printf("Gagal menyimpan pesan media manual ke DB: %v", errSave)
+					} else {
+						log.Println("Pesan media manual berhasil disimpan ke database")
+					}
+				}
+			}
+		}
+	}
+	return err
 }
 
 func (s *service) sendWhatsAppPayload(payload WhatsAppMediaPayload, phoneID, accessToken string) error {

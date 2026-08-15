@@ -15,7 +15,7 @@ import com.example.baper_andoid.navigation.bottomNavItems
 import com.example.baper_andoid.ui.theme.InterFamily
 
 @Composable
-fun BottomNavBar(navController: NavController) {
+fun BottomNavBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
     val brandGreen = Color(0xFF107C42)
     val inactiveColor = Color.Black // Tetap hitam sesuai permintaan sebelumnya
     
@@ -24,15 +24,8 @@ fun BottomNavBar(navController: NavController) {
         containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        
-        // Optimasi: derivedStateOf agar tidak memicu recomposition berlebihan
-        val currentRoute by remember(navBackStackEntry) {
-            derivedStateOf { navBackStackEntry?.destination?.route }
-        }
-
-        bottomNavItems.forEach { item ->
-            val isSelected = currentRoute == item.route
+        bottomNavItems.forEachIndexed { index, item ->
+            val isSelected = selectedIndex == index
             
             NavigationBarItem(
                 icon = {
@@ -53,14 +46,8 @@ fun BottomNavBar(navController: NavController) {
                 },
                 selected = isSelected,
                 onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    if (selectedIndex != index) {
+                        onItemSelected(index)
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(

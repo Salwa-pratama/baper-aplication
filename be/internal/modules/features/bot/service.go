@@ -84,6 +84,7 @@ func (s *service) UpdateBotPrompt(userID string, botID string, req UpdateBotProm
 		"id":           bot.ID,
 		"agent_prompt": req.AgentPrompt,
 		"agent_api":    req.AgentAPI,
+		"wa_number":    req.WaNumber,
 	}, nil
 }
 
@@ -124,5 +125,6 @@ func (s *service) GetMyBot(userID string) (map[string]interface{}, error) {
 		"is_active":    bot.IsActive,
 		"agent_prompt": bot.AgentPrompt,
 		"agent_api":    bot.AgentAPI,
+		"wa_number":    bot.WaNumber,
 	}, nil
 }

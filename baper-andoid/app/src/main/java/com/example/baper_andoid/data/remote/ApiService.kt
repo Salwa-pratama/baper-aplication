@@ -101,6 +101,15 @@ interface ApiService {
         @Body request: SendMediaRequest
     ): ChatResponse
 
+    @retrofit2.http.Multipart
+    @POST("webhook/upload-media")
+    suspend fun uploadMedia(
+        @retrofit2.http.Part("to") to: okhttp3.RequestBody,
+        @retrofit2.http.Part("type") type: okhttp3.RequestBody,
+        @retrofit2.http.Part file: okhttp3.MultipartBody.Part,
+        @retrofit2.http.Part("caption") caption: okhttp3.RequestBody?
+    ): ChatResponse
+
     // Orders
     @GET("orders")
     suspend fun getOrders(): com.example.baper_andoid.data.remote.dto.response.OrderListResponse

@@ -107,13 +107,18 @@ fun HomeScreen(
 
     var showNotificationPanel by remember { mutableStateOf(false) }
 
-    val bottomNavController = rememberNavController()
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { 4 })
     val bgGray = Color(0xFFF7F9F8)
 
     Scaffold(
         containerColor = bgGray,
         bottomBar = {
-            BottomNavBar(navController = bottomNavController)
+            BottomNavBar(
+                selectedIndex = pagerState.currentPage,
+                onItemSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                }
+            )
         }
     ) { paddingValues ->
         Box(
@@ -121,96 +126,106 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            NavHost(
-                navController = bottomNavController,
-                startDestination = BottomNavItem.Beranda.route
-            ) {
-                composable(BottomNavItem.Beranda.route) {
-                    var isRefreshing by remember { mutableStateOf(false) }
-                    
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
-                            isRefreshing = true
-                            chatViewModel.fetchConversations(onComplete = {
-                                isRefreshing = false
-                            })
-                            // Juga refresh dashboard stats jika ada
-                            homeViewModel.refreshData()
-                        }
-                    ) {
-                        if (uiState.isLoading) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = Color(0xFF107C42))
+            androidx.compose.foundation.pager.HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        var isRefreshing by remember { mutableStateOf(false) }
+                        
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = {
+                                isRefreshing = true
+                                chatViewModel.fetchConversations(onComplete = {
+                                    isRefreshing = false
+                                })
+                                // Juga refresh dashboard stats jika ada
+                                homeViewModel.refreshData()
                             }
-                        } else {
-                            val name by profilViewModel.nama
-                            val imageUri by profilViewModel.profileImageUri
-                            val summary by rekapViewModel.currentMonthSummary.collectAsState()
-
-                            DashboardContent(
-                                name = name,
-                                imageUri = imageUri,
-                                chatViewModel = chatViewModel,
-                                botViewModel = botViewModel,
-                                summary = summary,
-                                hasUnreadNotifications = hasUnread,
-                                onNavigateToChat = onNavigateToChat,
-                                onNavigateToBotStatus = onNavigateToBotStatus,
-                                onNavigateToLihatPesanan = onNavigateToLihatPesanan,
-                                onNotificationClick = { showNotificationPanel = true },
-                                onProfileClick = {
-                                    bottomNavController.navigate(BottomNavItem.Profil.route) {
-                                        popUpTo(bottomNavController.graph.startDestinationId) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                        ) {
+                            if (uiState.isLoading) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = Color(0xFF107C42))
                                 }
+                            } else {
+                                val name by profilViewModel.nama
+                                val imageUri by profilViewModel.profileImageUri
+                                val summary by rekapViewModel.currentMonthSummary.collectAsState()
+
+                                DashboardContent(
+                                    name = name,
+                                    imageUri = imageUri,
+                                    chatViewModel = chatViewModel,
+                                    botViewModel = botViewModel,
+                                    summary = summary,
+                                    hasUnreadNotifications = hasUnread,
+                                    onNavigateToChat = onNavigateToChat,
+                                    onNavigateToBotStatus = onNavigateToBotStatus,
+                                    onNavigateToLihatPesanan = onNavigateToLihatPesanan,
+                                    onNotificationClick = { showNotificationPanel = true },
+                                    onProfileClick = {
+                                        scope.launch { pagerState.animateScrollToPage(3) }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    1 -> {
+                        var isRefreshing by remember { mutableStateOf(false) }
+                        
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = {
+                                isRefreshing = true
+                                scope.launch {
+                                    produkViewModel.getProducts()
+                                    delay(500)
+                                    isRefreshing = false
+                                }
+                            }
+                        ) {
+                            ProdukScreen(viewModel = produkViewModel)
+                        }
+                    }
+                    2 -> {
+                        var isRefreshing by remember { mutableStateOf(false) }
+                        
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = {
+                                isRefreshing = true
+                                scope.launch {
+                                    delay(2000)
+                                    isRefreshing = false
+                                }
+                            }
+                        ) {
+                            RekapScreen(
+                                viewModel = rekapViewModel,
+                                onNavigateToRekapDetail = onNavigateToRekapDetail
                             )
                         }
                     }
-                }
-                composable(BottomNavItem.Produk.route) {
-                    ProdukScreen(viewModel = produkViewModel)
-                }
-                composable(BottomNavItem.Rekap.route) {
-                    var isRefreshing by remember { mutableStateOf(false) }
-                    
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
-                            isRefreshing = true
-                            scope.launch {
-                                delay(2000)
-                                isRefreshing = false
+                    3 -> {
+                        var isRefreshing by remember { mutableStateOf(false) }
+                        
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = {
+                                isRefreshing = true
+                                scope.launch {
+                                    delay(2000)
+                                    isRefreshing = false
+                                }
                             }
+                        ) {
+                            ProfilScreen(
+                                viewModel = profilViewModel,
+                                onLogout = onLogout
+                            )
                         }
-                    ) {
-                        RekapScreen(
-                            viewModel = rekapViewModel,
-                            onNavigateToRekapDetail = onNavigateToRekapDetail
-                        )
-                    }
-                }
-                composable(BottomNavItem.Profil.route) {
-                    var isRefreshing by remember { mutableStateOf(false) }
-                    
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
-                            isRefreshing = true
-                            scope.launch {
-                                delay(2000)
-                                isRefreshing = false
-                            }
-                        }
-                    ) {
-                        ProfilScreen(
-                            viewModel = profilViewModel,
-                            onLogout = onLogout
-                        )
                     }
                 }
             }
@@ -270,13 +285,7 @@ fun HomeScreen(
                                 onNavigateToLihatPesanan(0)
                             }
                             NotifType.STOK_PENGINGAT -> {
-                                bottomNavController.navigate(BottomNavItem.Produk.route) {
-                                    popUpTo(bottomNavController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                scope.launch { pagerState.animateScrollToPage(1) }
                             }
                         }
                     }
