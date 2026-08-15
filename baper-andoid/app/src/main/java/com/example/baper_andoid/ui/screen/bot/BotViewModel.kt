@@ -20,6 +20,9 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
     private val _apiKey = mutableStateOf("")
     val apiKey: State<String> = _apiKey
 
+    private val _botNumber = mutableStateOf("")
+    val botNumber: State<String> = _botNumber
+
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
 
@@ -86,6 +89,10 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
 
     fun onApiKeyChange(newValue: String) {
         _apiKey.value = newValue
+    }
+
+    fun onBotNumberChange(newValue: String) {
+        _botNumber.value = newValue
     }
 
     fun saveBotConfig() {

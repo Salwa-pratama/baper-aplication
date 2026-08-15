@@ -41,6 +41,7 @@ fun BotStatusScreen(
     val isBotActive by viewModel.isBotActive
     val botPrompt by viewModel.botPrompt
     val apiKey by viewModel.apiKey
+    val botNumber by viewModel.botNumber
     val isLoading by viewModel.isLoading
     
     val brandGreen = Color(0xFF107C42)
@@ -160,6 +161,79 @@ fun BotStatusScreen(
                                         uncheckedTrackColor = Color.LightGray,
                                         uncheckedBorderColor = Color.Transparent
                                     )
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text(
+                                    "Nomor Bot",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    fontFamily = InterFamily,
+                                    color = textColor
+                                )
+                                Text(
+                                    "Nomor bot harus terdaftar secara resmi di Meta for Developers",
+                                    fontSize = 12.sp,
+                                    color = textColor,
+                                    fontFamily = InterFamily
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                val interactionSource = remember { MutableInteractionSource() }
+                                BasicTextField(
+                                    value = botNumber,
+                                    onValueChange = { viewModel.onBotNumberChange(it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textStyle = customTextStyle,
+                                    cursorBrush = SolidColor(brandGreen),
+                                    interactionSource = interactionSource,
+                                    singleLine = true,
+                                    decorationBox = { innerTextField ->
+                                        OutlinedTextFieldDefaults.DecorationBox(
+                                            value = botNumber,
+                                            innerTextField = {
+                                                Box(contentAlignment = Alignment.TopStart) {
+                                                    if (botNumber.isEmpty()) {
+                                                        Text(
+                                                            text = "Masukkan nomor bot",
+                                                            style = customTextStyle.copy(color = Color.LightGray)
+                                                        )
+                                                    }
+                                                    innerTextField()
+                                                }
+                                            },
+                                            enabled = true,
+                                            singleLine = true,
+                                            visualTransformation = VisualTransformation.None,
+                                            interactionSource = interactionSource,
+                                            container = {
+                                                OutlinedTextFieldDefaults.Container(
+                                                    enabled = true,
+                                                    isError = false,
+                                                    interactionSource = interactionSource,
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedContainerColor = bgGray.copy(alpha = 0.5f),
+                                                        unfocusedContainerColor = bgGray.copy(alpha = 0.5f),
+                                                        focusedBorderColor = Color(0xFFE2E8F0),
+                                                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                                                    ),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                )
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
+                                        )
+                                    }
                                 )
                             }
                         }
