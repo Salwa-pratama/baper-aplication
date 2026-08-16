@@ -23,10 +23,10 @@ type Repository interface {
 	GetRecentMessages(sessionID string, limit int) ([]models.Message, error)
 	GetProductsByBusinessID(businessID string) ([]models.Product, error)
 	GetCustomerOrders(customerID string) ([]models.Order, error)
-	// SaveOrder menyimpan order + item DAN mengurangi stok dalam satu
-	// transaksi. Stok dikunci (SELECT ... FOR UPDATE) supaya dua pesanan
-	// bersamaan tidak bisa membuat stok jadi minus.
-	SaveOrder(order *models.Order, items []models.OrderItem) error
+	// ReplaceUnpaidOrderInSession menyimpan order + item DAN mengurangi stok dalam satu
+	// transaksi. Jika sudah ada order unpaid di sesi yang sama, order lama akan dihapus
+	// dan stoknya dikembalikan sebelum order baru dibuat.
+	ReplaceUnpaidOrderInSession(order *models.Order, items []models.OrderItem) error
 	GenerateContent(botPrompt string, historyMsgs []models.Message, productCatalog string, prompt string) (string, error)
 }
 
@@ -180,16 +180,44 @@ func (r *repository) GetCustomerOrders(customerID string) ([]models.Order, error
 // ErrStokKurang dikembalikan jika stok tidak cukup saat order dibuat.
 var ErrStokKurang = errors.New("stok tidak cukup")
 
-// SaveOrder menyimpan order + item DAN mengurangi stok, semuanya dalam satu
-// transaksi. Baris produk dikunci dengan SELECT ... FOR UPDATE agar dua
-// pesanan yang datang bersamaan tidak bisa menembus stok jadi negatif.
-// Kalau ada satu item yang stoknya kurang, SELURUH order dibatalkan (rollback).
-func (r *repository) SaveOrder(order *models.Order, items []models.OrderItem) error {
+// ReplaceUnpaidOrderInSession menyimpan order + item DAN mengurangi stok, semuanya dalam satu
+// transaksi. Jika ada order unpaid lama di sesi ini, order tersebut akan dihancurkan
+// (stok direfund) sebelum pesanan baru diproses.
+func (r *repository) ReplaceUnpaidOrderInSession(order *models.Order, items []models.OrderItem) error {
 	if len(items) == 0 {
 		return errors.New("order tanpa item")
 	}
+	if order.SessionID == nil {
+		return errors.New("order tanpa session ID")
+	}
 
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 0. Cari unpaid order lama di sesi ini
+		var oldOrder models.Order
+		errOld := tx.Preload("OrderItems").
+			Where("session_id = ? AND status = ?", *order.SessionID, models.OrderStatusUnpaid).
+			First(&oldOrder).Error
+
+		if errOld == nil {
+			// Refund stok lama
+			for _, oldItem := range oldOrder.OrderItems {
+				if err := tx.Model(&models.Product{}).
+					Where("id = ?", oldItem.ProductID).
+					Update("stock", gorm.Expr("stock + ?", oldItem.Quantity)).Error; err != nil {
+					return fmt.Errorf("gagal mengembalikan stok lama: %w", err)
+				}
+			}
+			// Hapus data order lama
+			if err := tx.Where("order_id = ?", oldOrder.ID).Delete(&models.OrderItem{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("id = ?", oldOrder.ID).Delete(&models.Order{}).Error; err != nil {
+				return err
+			}
+		} else if !errors.Is(errOld, gorm.ErrRecordNotFound) {
+			return errOld
+		}
+
 		// 1. Kunci + validasi + kurangi stok tiap item lebih dulu.
 		for i := range items {
 			if items[i].Quantity <= 0 {

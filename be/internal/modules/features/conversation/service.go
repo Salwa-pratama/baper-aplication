@@ -6,6 +6,7 @@ import (
 
 	"baper/internal/common/apperror"
 	"baper/internal/models"
+	"baper/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -24,6 +25,9 @@ const (
 type Service interface {
 	ListConversations(ctx context.Context, userID string) ([]ConversationResponse, error)
 	GetConversationMessages(ctx context.Context, userID, sessionID string, limit, offset int) (*ConversationDetailResponse, error)
+	MarkMessagesAsRead(ctx context.Context, userID, sessionID string) error
+	DeleteConversation(ctx context.Context, userID, sessionID string) error
+	BlockCustomer(ctx context.Context, userID, sessionID string) error
 }
 
 type service struct {
@@ -125,6 +129,42 @@ func (s *service) GetConversationMessages(ctx context.Context, userID, sessionID
 	}, nil
 }
 
+func (s *service) MarkMessagesAsRead(ctx context.Context, userID, sessionID string) error {
+	businessID, err := s.businessIDOf(ctx, userID)
+	if err != nil {
+		return err
+	}
+	_, err = s.repo.FindSessionOwned(ctx, businessID, sessionID)
+	if err != nil {
+		return apperror.NotFound("Percakapan tidak ditemukan")
+	}
+	return s.repo.MarkMessagesAsRead(ctx, sessionID)
+}
+
+func (s *service) DeleteConversation(ctx context.Context, userID, sessionID string) error {
+	businessID, err := s.businessIDOf(ctx, userID)
+	if err != nil {
+		return err
+	}
+	_, err = s.repo.FindSessionOwned(ctx, businessID, sessionID)
+	if err != nil {
+		return apperror.NotFound("Percakapan tidak ditemukan")
+	}
+	return s.repo.DeleteConversation(ctx, sessionID)
+}
+
+func (s *service) BlockCustomer(ctx context.Context, userID, sessionID string) error {
+	businessID, err := s.businessIDOf(ctx, userID)
+	if err != nil {
+		return err
+	}
+	row, err := s.repo.FindSessionOwned(ctx, businessID, sessionID)
+	if err != nil {
+		return apperror.NotFound("Percakapan tidak ditemukan")
+	}
+	return s.repo.BlockCustomer(ctx, row.CustomerID)
+}
+
 func toConversationResponse(r *sessionRow) ConversationResponse {
 	return ConversationResponse{
 		SessionID:         r.SessionID,
@@ -135,10 +175,11 @@ func toConversationResponse(r *sessionRow) ConversationResponse {
 		EndedAt:           r.EndedAt,
 		CustomerName:      r.CustomerName,
 		CustomerPhone:     r.CustomerPhone,
-		LastMessage:       r.LastMessage,
+		LastMessage:       utils.Decrypt(r.LastMessage),
 		LastMessageSender: r.LastMessageSender,
 		LastMessageAt:     r.LastMessageAt,
 		MessageCount:      r.MessageCount,
+		UnreadCount:       r.UnreadCount,
 	}
 }
 
@@ -146,7 +187,7 @@ func toMessageResponse(m *models.Message) MessageResponse {
 	return MessageResponse{
 		ID:         m.ID,
 		SenderType: m.SenderType,
-		Content:    m.Content,
+		Content:    utils.Decrypt(m.Content),
 		Metadata:   m.Metadata,
 		CreatedAt:  m.CreatedAt,
 		SessionID:  m.SessionID,

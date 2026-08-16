@@ -14,6 +14,7 @@ type Customer struct {
 	WaPhoneNumber string    `gorm:"type:varchar(20);not null" json:"wa_phone_number"`
 	Name          string    `gorm:"type:varchar(100)" json:"name"`
 	Address       string    `gorm:"type:text" json:"address"`
+	IsBlocked     bool      `gorm:"default:false" json:"is_blocked"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 

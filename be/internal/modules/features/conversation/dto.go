@@ -22,11 +22,10 @@ type ConversationResponse struct {
 	LastMessageAt     *time.Time `json:"last_message_at"`
 
 	// MessageCount = total pesan dalam sesi ini.
-	//
-	// CATATAN: kolom read/unread TIDAK ADA di skema database saat ini
-	// (models.Message hanya punya created_at). Jadi unread_count belum bisa
-	// dihitung dan sengaja tidak disertakan daripada mengirim angka palsu.
 	MessageCount int64 `json:"message_count"`
+
+	// Jumlah pesan yang dikirim customer dan belum dibaca
+	UnreadCount int64 `json:"unread_count"`
 }
 
 // MessageResponse = satu bubble chat.

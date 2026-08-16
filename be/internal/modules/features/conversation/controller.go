@@ -108,3 +108,90 @@ func (c *Controller) GetConversationMessages(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(res.Success("Berhasil mengambil pesan percakapan", detail))
 }
+
+// MarkMessagesAsRead godoc
+// @Summary Tandai pesan telah dibaca
+// @Description Menandai semua pesan yang dikirim oleh customer dalam satu sesi chat sebagai sudah dibaca (is_read = true).
+// @Tags Conversations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Chat Session ID"
+// @Success 200 {object} res.Response
+// @Failure 401 {object} res.Response
+// @Failure 404 {object} res.Response
+// @Failure 500 {object} res.Response
+// @Router /api/conversations/{id}/read [patch]
+func (c *Controller) MarkMessagesAsRead(ctx *fiber.Ctx) error {
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	sessionID := ctx.Params("id")
+	if sessionID == "" {
+		return res.HandleError(ctx, apperror.BadRequest("ID sesi wajib diisi"))
+	}
+	err = c.service.MarkMessagesAsRead(ctx.Context(), userID, sessionID)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	return ctx.Status(fiber.StatusOK).JSON(res.Success("Pesan ditandai telah dibaca", nil))
+}
+
+// DeleteConversation godoc
+// @Summary Hapus obrolan
+// @Description Menghapus sebuah obrolan dan semua pesan di dalamnya.
+// @Tags Conversations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Chat Session ID"
+// @Success 200 {object} res.Response
+// @Failure 401 {object} res.Response
+// @Failure 404 {object} res.Response
+// @Failure 500 {object} res.Response
+// @Router /api/conversations/{id} [delete]
+func (c *Controller) DeleteConversation(ctx *fiber.Ctx) error {
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	sessionID := ctx.Params("id")
+	if sessionID == "" {
+		return res.HandleError(ctx, apperror.BadRequest("ID sesi wajib diisi"))
+	}
+	err = c.service.DeleteConversation(ctx.Context(), userID, sessionID)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	return ctx.Status(fiber.StatusOK).JSON(res.Success("Obrolan berhasil dihapus", nil))
+}
+
+// BlockCustomer godoc
+// @Summary Blokir customer
+// @Description Memblokir customer terkait sehingga webhook mengabaikan pesannya di masa depan.
+// @Tags Conversations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Chat Session ID"
+// @Success 200 {object} res.Response
+// @Failure 401 {object} res.Response
+// @Failure 404 {object} res.Response
+// @Failure 500 {object} res.Response
+// @Router /api/conversations/{id}/block [patch]
+func (c *Controller) BlockCustomer(ctx *fiber.Ctx) error {
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	sessionID := ctx.Params("id")
+	if sessionID == "" {
+		return res.HandleError(ctx, apperror.BadRequest("ID sesi wajib diisi"))
+	}
+	err = c.service.BlockCustomer(ctx.Context(), userID, sessionID)
+	if err != nil {
+		return res.HandleError(ctx, err)
+	}
+	return ctx.Status(fiber.StatusOK).JSON(res.Success("Customer berhasil diblokir", nil))
+}

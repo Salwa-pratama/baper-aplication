@@ -109,23 +109,41 @@ fun NotifikasiPanelContent(
         
         HorizontalDivider(thickness = 1.dp, color = dividerColor)
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false),
-            contentPadding = PaddingValues(bottom = 20.dp)
-        ) {
-            items(notifications) { item ->
-                NotificationRow(
-                    item = item, 
-                    brandGreen = brandGreen, 
-                    textColorPrimary = textColorPrimary, 
-                    textColorSecondary = textColorSecondary,
-                    onClick = { 
-                        onNotificationClick(item) 
-                    }
+        if (notifications.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .padding(vertical = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Tidak ada notifikasi baru",
+                    fontSize = 16.sp,
+                    fontFamily = InterFamily,
+                    color = textColorSecondary,
+                    fontWeight = FontWeight.Medium
                 )
-                HorizontalDivider(thickness = 0.5.dp, color = dividerColor.copy(alpha = 0.5f))
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false),
+                contentPadding = PaddingValues(bottom = 20.dp)
+            ) {
+                items(notifications) { item ->
+                    NotificationRow(
+                        item = item, 
+                        brandGreen = brandGreen, 
+                        textColorPrimary = textColorPrimary, 
+                        textColorSecondary = textColorSecondary,
+                        onClick = { 
+                            onNotificationClick(item) 
+                        }
+                    )
+                    HorizontalDivider(thickness = 0.5.dp, color = dividerColor.copy(alpha = 0.5f))
+                }
             }
         }
 

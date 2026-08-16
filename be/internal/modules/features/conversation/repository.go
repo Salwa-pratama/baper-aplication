@@ -26,6 +26,7 @@ type sessionRow struct {
 	LastMessageSender string
 	LastMessageAt     *time.Time
 	MessageCount      int64
+	UnreadCount       int64
 }
 
 type Repository interface {
@@ -42,6 +43,10 @@ type Repository interface {
 
 	// ListMessagesBySession mengembalikan pesan dalam satu sesi, urut naik.
 	ListMessagesBySession(ctx context.Context, sessionID string, limit, offset int) ([]models.Message, error)
+
+	MarkMessagesAsRead(ctx context.Context, sessionID string) error
+	DeleteConversation(ctx context.Context, sessionID string) error
+	BlockCustomer(ctx context.Context, customerID string) error
 }
 
 type repository struct {
@@ -83,7 +88,8 @@ var selectSessionSummary = `
 	COALESCE(` + lastMsg("content") + `, '') AS last_message,
 	COALESCE(` + lastMsg("sender_type") + `, '') AS last_message_sender,
 	` + lastMsg("created_at") + ` AS last_message_at,
-	(SELECT COUNT(*) FROM messages m WHERE m.session_id = cs.id) AS message_count
+	(SELECT COUNT(*) FROM messages m WHERE m.session_id = cs.id) AS message_count,
+	(SELECT COUNT(*) FROM messages m WHERE m.session_id = cs.id AND m.is_read = false AND m.sender_type = 'customer') AS unread_count
 `
 
 // baseSessionQuery: sesi -> bot -> customer, discope ke satu bisnis.
@@ -144,4 +150,35 @@ func (r *repository) ListMessagesBySession(ctx context.Context, sessionID string
 	}
 	
 	return msgs, err
+}
+
+func (r *repository) MarkMessagesAsRead(ctx context.Context, sessionID string) error {
+	return r.db.WithContext(ctx).
+		Model(&models.Message{}).
+		Where("session_id = ? AND sender_type = ? AND is_read = ?", sessionID, "customer", false).
+		Update("is_read", true).Error
+}
+
+func (r *repository) DeleteConversation(ctx context.Context, sessionID string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Nullify SessionID in orders to prevent foreign key constraint errors
+		if err := tx.Model(&models.Order{}).Where("session_id = ?", sessionID).Update("session_id", gorm.Expr("NULL")).Error; err != nil {
+			return err
+		}
+
+		// Delete all messages in this session
+		if err := tx.Where("session_id = ?", sessionID).Delete(&models.Message{}).Error; err != nil {
+			return err
+		}
+		
+		// Delete the chat session itself
+		return tx.Where("id = ?", sessionID).Delete(&models.ChatSession{}).Error
+	})
+}
+
+func (r *repository) BlockCustomer(ctx context.Context, customerID string) error {
+	return r.db.WithContext(ctx).
+		Model(&models.Customer{}).
+		Where("id = ?", customerID).
+		Update("is_blocked", true).Error
 }

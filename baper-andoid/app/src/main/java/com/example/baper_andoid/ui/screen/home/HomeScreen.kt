@@ -11,6 +11,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -83,24 +86,24 @@ fun HomeScreen(
 
     // Notification State Hoisted
     val notificationList = remember {
-        mutableStateListOf(
+        mutableStateListOf<NotifikasiItem>()
+    }
+    
+    LaunchedEffect(chatViewModel.chatList.toList()) {
+        val newNotifications = chatViewModel.chatList.filter { it.unreadCount > 0 }.map { chat ->
             NotifikasiItem(
-                1, "Pesanan baru", "Ada pesanan baru dari Siti Reseller - Bandu...", "2m lalu", 
-                Icons.Default.ShoppingBag, isUnread = true, type = NotifType.PESANAN_BARU, actionId = "Siti-Reseller-ID"
-            ),
-            NotifikasiItem(
-                2, "Pembayaran diterima", "Pembayaran dari Agus Sembako berhasil dit...", "1j lalu", 
-                Icons.Default.CreditCard, isUnread = true, type = NotifType.PEMBAYARAN_DITERIMA
-            ),
-            NotifikasiItem(
-                4, "Pesan baru", "Ada pesan baru dari pelanggan", "Kemarin", 
-                Icons.Outlined.ChatBubbleOutline, isUnread = true, type = NotifType.PESAN_BARU, actionId = "Agus-Sembako-ID"
-            ),
-            NotifikasiItem(
-                5, "Pengingat", "Jangan lupa untuk memperbarui stok produk h...", "5j lalu", 
-                Icons.Outlined.NotificationsNone, type = NotifType.STOK_PENGINGAT
+                id = chat.sessionId.hashCode(),
+                title = "Pesan baru",
+                message = "Ada ${chat.unreadCount} pesan baru dari ${chat.customerName}",
+                time = chat.lastMessageAt?.take(10) ?: "Baru saja",
+                icon = Icons.Outlined.ChatBubbleOutline,
+                isUnread = true,
+                type = NotifType.PESAN_BARU,
+                actionId = chat.sessionId
             )
-        )
+        }
+        notificationList.removeAll { it.type == NotifType.PESAN_BARU }
+        notificationList.addAll(newNotifications)
     }
     
     val hasUnread = notificationList.any { it.isUnread }
@@ -388,13 +391,23 @@ fun DashboardContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            items(chats) { chat ->
+            items(
+                items = chats,
+                key = { it.sessionId }
+            ) { chat ->
                 ChatListItem(
                     chat = chat, 
                     textColor = textColorPrimary, 
                     onClick = { 
                         chatViewModel.setActiveConversation(chat)
+                        chatViewModel.markAsRead(chat.sessionId)
                         onNavigateToChat(chat.sessionId) 
+                    },
+                    onDelete = {
+                        chatViewModel.deleteConversation(chat.sessionId)
+                    },
+                    onBlock = {
+                        chatViewModel.blockCustomer(chat.sessionId)
                     }
                 )
             }
@@ -716,10 +729,18 @@ fun QuickActionButton(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ChatListItem(chat: ConversationItem, textColor: Color, onClick: () -> Unit) {
+fun ChatListItem(
+    chat: ConversationItem, 
+    textColor: Color, 
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    onBlock: () -> Unit
+) {
     val brandGreen = Color(0xFF107C42)
     val interactionSource = remember { MutableInteractionSource() }
+    var showMenu by remember { mutableStateOf(false) }
     
     Card(
         modifier = Modifier
@@ -733,10 +754,12 @@ fun ChatListItem(chat: ConversationItem, textColor: Color, onClick: () -> Unit) 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(
+                .combinedClickable(
                     interactionSource = interactionSource,
-                    indication = ripple(color = Color.Gray)
-                ) { onClick() }
+                    indication = ripple(color = Color.Gray),
+                    onClick = { onClick() },
+                    onLongClick = { showMenu = true }
+                )
         ) {
             Row(
                 modifier = Modifier
@@ -805,7 +828,48 @@ fun ChatListItem(chat: ConversationItem, textColor: Color, onClick: () -> Unit) 
                         fontFamily = InterFamily,
                         color = Color(0xFF94A3B8)
                     )
+                    
+                    if (chat.unreadCount > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(brandGreen),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = chat.unreadCount.toString(),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
+            }
+            
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                offset = DpOffset(x = 200.dp, y = 0.dp)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Hapus Obrolan", color = Color.Red) },
+                    onClick = { 
+                        showMenu = false
+                        onDelete() 
+                    },
+                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
+                )
+                DropdownMenuItem(
+                    text = { Text("Blokir Pengguna") },
+                    onClick = { 
+                        showMenu = false
+                        onBlock() 
+                    },
+                    leadingIcon = { Icon(Icons.Default.Block, contentDescription = null) }
+                )
             }
         }
     }

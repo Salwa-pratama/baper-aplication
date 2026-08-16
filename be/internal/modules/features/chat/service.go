@@ -19,6 +19,7 @@ import (
 
 	"baper/internal/common/apperror"
 	"baper/internal/models"
+	"baper/internal/utils"
 )
 
 type Service interface {
@@ -144,6 +145,14 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 		}
 	} else {
 		log.Printf("Customer %s sudah ada (ID: %s)", msg.From, customer.ID)
+		if customer.IsBlocked {
+			log.Printf("Customer %s diblokir, mengabaikan pesan.", msg.From)
+			return Response{
+				Status:  "ok",
+				Message: "Pesan diabaikan (customer diblokir)",
+				Data:    nil,
+			}, nil
+		}
 	}
 
 	// 3. Dapatkan atau Buat Chat Session
@@ -172,7 +181,7 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 	incomingMsg := &models.Message{
 		SessionID:  session.ID,
 		SenderType: "customer",
-		Content:    msg.Text.Body,
+		Content:    utils.Encrypt(msg.Text.Body),
 	}
 	if errSave := s.repo.SaveMessage(incomingMsg); errSave != nil {
 		log.Printf("Gagal menyimpan pesan masuk: %v", errSave)
@@ -199,8 +208,11 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 			}
 		}()
 
-		// Fetch History
+		// Fetch History and decrypt for AI context
 		historyMsgs, _ := s.repo.GetRecentMessages(sessionData.ID, 10)
+		for i := range historyMsgs {
+			historyMsgs[i].Content = utils.Decrypt(historyMsgs[i].Content)
+		}
 
 		// Fetch Products
 		products, _ := s.repo.GetProductsByBusinessID(botData.BusinessID)
@@ -270,9 +282,10 @@ func (s *service) ReceiveMessage(req WebhookPayload) (Response, error) {
 							Status: models.OrderStatusUnpaid,
 						}
 
-						// SaveOrder mengunci stok, menolak jika kurang, lalu
-						// mengurangi stok dalam satu transaksi.
-						if err := s.repo.SaveOrder(newOrder, orderItems); err != nil {
+						// ReplaceUnpaidOrderInSession mengunci stok, menolak jika kurang, lalu
+						// mengurangi stok dalam satu transaksi. Jika ada pesanan unpaid
+						// lama di sesi ini, pesanan lama akan direfund dan dihapus lebih dulu.
+						if err := s.repo.ReplaceUnpaidOrderInSession(newOrder, orderItems); err != nil {
 							if errors.Is(err, ErrStokKurang) {
 								log.Printf("Order dibatalkan, stok tidak cukup: %v", err)
 							} else {
@@ -370,7 +383,7 @@ func (s *service) SendMessage(to string, text string) error {
 				outgoingMsg := &models.Message{
 					SessionID:  session.ID,
 					SenderType: "bot", // bisa juga "admin", frontend hanya cek != "customer"
-					Content:    text,
+					Content:    utils.Encrypt(text),
 				}
 				if errSave := s.repo.SaveMessage(outgoingMsg); errSave != nil {
 					log.Printf("Gagal menyimpan pesan manual ke DB: %v", errSave)
@@ -537,7 +550,7 @@ func (s *service) SendMediaByID(to, mediaID, mediaType, caption string) error {
 					outgoingMsg := &models.Message{
 						SessionID:  session.ID,
 						SenderType: "bot", 
-						Content:    content,
+						Content:    utils.Encrypt(content),
 					}
 					if errSave := s.repo.SaveMessage(outgoingMsg); errSave != nil {
 						log.Printf("Gagal menyimpan pesan media manual ke DB: %v", errSave)

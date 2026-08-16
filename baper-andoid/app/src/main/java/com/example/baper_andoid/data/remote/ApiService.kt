@@ -91,6 +91,21 @@ interface ApiService {
         @Path("id") id: String
     ): ConversationDetailResponse
 
+    @PATCH("conversations/{id}/read")
+    suspend fun markAsRead(
+        @Path("id") id: String
+    ): ChatResponse
+
+    @DELETE("conversations/{id}")
+    suspend fun deleteConversation(
+        @Path("id") id: String
+    ): ChatResponse
+
+    @PATCH("conversations/{id}/block")
+    suspend fun blockCustomer(
+        @Path("id") id: String
+    ): ChatResponse
+
     @POST("webhook/send-message")
     suspend fun sendMessage(
         @Body request: SendMessageRequest

@@ -14,6 +14,7 @@ type Message struct {
 	SenderType string    `gorm:"type:varchar(50);not null" json:"sender_type"`
 	Content    string    `gorm:"type:text;not null" json:"content"`
 	Metadata   string    `gorm:"type:json" json:"metadata"`
+	IsRead     bool      `gorm:"default:false" json:"is_read"`
 	CreatedAt  time.Time `json:"created_at"`
 
 	ChatSession ChatSession `gorm:"foreignKey:SessionID" json:"chat_session"`

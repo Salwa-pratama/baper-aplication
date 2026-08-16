@@ -20,4 +20,7 @@ func InitRoutes(router fiber.Router, db *gorm.DB) {
 	// GET /api/conversations/:id/messages     -> isi chat saat card ditekan
 	conversations.Get("/", ctrl.ListConversations)
 	conversations.Get("/:id/messages", ctrl.GetConversationMessages)
+	conversations.Patch("/:id/read", ctrl.MarkMessagesAsRead)
+	conversations.Delete("/:id", ctrl.DeleteConversation)
+	conversations.Patch("/:id/block", ctrl.BlockCustomer)
 }

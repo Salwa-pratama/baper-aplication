@@ -49,4 +49,16 @@ class ChatRepository(private val apiService: ApiService) {
         )
         return apiService.sendMedia(request)
     }
+
+    suspend fun markAsRead(sessionId: String): ChatResponse {
+        return apiService.markAsRead(sessionId)
+    }
+
+    suspend fun deleteConversation(sessionId: String): ChatResponse {
+        return apiService.deleteConversation(sessionId)
+    }
+
+    suspend fun blockCustomer(sessionId: String): ChatResponse {
+        return apiService.blockCustomer(sessionId)
+    }
 }

@@ -70,8 +70,47 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
         }
     }
 
-    fun markAsRead(chatId: String) {
-        // Optional: Implement if API supports marking as read.
+    fun markAsRead(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                val response = repository.markAsRead(sessionId)
+                if (response.status) {
+                    val index = _chatList.indexOfFirst { it.sessionId == sessionId }
+                    if (index != -1) {
+                        _chatList[index] = _chatList[index].copy(unreadCount = 0)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun deleteConversation(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                val response = repository.deleteConversation(sessionId)
+                if (response.status) {
+                    _chatList.removeAll { it.sessionId == sessionId }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun blockCustomer(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                val response = repository.blockCustomer(sessionId)
+                if (response.status) {
+                    // Customer diblokir. Kita bisa memanggil fetchConversations() untuk me-refresh
+                    // atau sekadar menampilkannya tetap ada. Di sini kita biarkan saja.
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun sendMessage(text: String, sessionId: String) {
@@ -116,7 +155,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
         }
     }
 
-    fun sendMediaMessage(context: android.content.Context, uri: android.net.Uri, sessionId: String) {
+    fun sendMediaMessage(context: android.content.Context, uri: android.net.Uri, sessionId: String, caption: String = "") {
         val toPhone = _currentCustomerPhone.value
         viewModelScope.launch {
             try {
@@ -126,17 +165,18 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                 val requestFile = okhttp3.RequestBody.create(null, file)
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 
-                val response = repository.uploadMedia(toPhone, "image", body, "")
+                val response = repository.uploadMedia(toPhone, "image", body, caption)
                 if (response.status) {
                     val currentTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
                         timeZone = TimeZone.getTimeZone("UTC")
                     }.format(Date())
                     
+                    val msgContent = if (caption.isNotBlank()) "[IMAGE] $caption" else "[IMAGE] Gambar Terkirim"
                     _messages.add(
                         MessageItem(
                             id = UUID.randomUUID().toString(),
                             senderType = "bot", 
-                            content = "[IMAGE] Gambar Terkirim",
+                            content = msgContent,
                             metadata = "",
                             createdAt = currentTime,
                             sessionId = sessionId
@@ -146,7 +186,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     val index = _chatList.indexOfFirst { it.sessionId == sessionId }
                     if (index != -1) {
                         val updatedItem = _chatList[index].copy(
-                            lastMessage = "📷 Gambar Terkirim",
+                            lastMessage = if (caption.isNotBlank()) "📷 $caption" else "📷 Gambar Terkirim",
                             lastMessageAt = currentTime,
                             lastMessageSender = "bot"
                         )

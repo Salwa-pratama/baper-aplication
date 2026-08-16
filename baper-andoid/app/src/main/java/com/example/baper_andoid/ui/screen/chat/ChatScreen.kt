@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +44,7 @@ fun ChatScreen(
     val bgGray = Color(0xFFF7F9F8)
     var messageText by remember { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
+    var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
     
     val messages = chatViewModel.messages
     val customerName by chatViewModel.currentCustomerName.collectAsState()
@@ -53,7 +55,7 @@ fun ChatScreen(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
             if (uri != null) {
-                chatViewModel.sendMediaMessage(context, uri, sessionId)
+                selectedImageUri = uri
             }
         }
     )
@@ -143,13 +145,39 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .imePadding()
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
+                if (selectedImageUri != null) {
+                    Box(modifier = Modifier.padding(bottom = 8.dp)) {
+                        coil.compose.AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Preview Gambar",
+                            modifier = Modifier
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(24.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Batal",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -194,7 +222,11 @@ fun ChatScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     FloatingActionButton(
                         onClick = { 
-                            if (messageText.isNotBlank()) {
+                            if (selectedImageUri != null) {
+                                chatViewModel.sendMediaMessage(context, selectedImageUri!!, sessionId, messageText)
+                                selectedImageUri = null
+                                messageText = ""
+                            } else if (messageText.isNotBlank()) {
                                 chatViewModel.sendMessage(messageText, sessionId)
                                 messageText = ""
                             }

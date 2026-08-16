@@ -14,7 +14,8 @@ data class ConversationItem(
     @SerializedName("last_message") val lastMessage: String,
     @SerializedName("last_message_sender") val lastMessageSender: String,
     @SerializedName("last_message_at") val lastMessageAt: String?,
-    @SerializedName("message_count") val messageCount: Int
+    @SerializedName("message_count") val messageCount: Int,
+    @SerializedName("unread_count") val unreadCount: Int
 )
 
 data class ConversationListResponse(
