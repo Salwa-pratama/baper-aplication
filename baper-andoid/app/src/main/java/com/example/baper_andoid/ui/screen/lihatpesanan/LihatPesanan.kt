@@ -26,6 +26,7 @@ import java.util.Locale
 import com.example.baper_andoid.ui.theme.InterFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.draw.clip
 import com.example.baper_andoid.data.remote.dto.response.OrderResponse
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -265,20 +266,6 @@ fun OrderCard(
                     color = textColorPrimary,
                     fontFamily = InterFamily
                 )
-                
-                Surface(
-                    color = if (order.status == "Belum Bayar") Color(0xFFFEF3C7) else Color(0xFFDCFCE7),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = order.status,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (order.status == "Belum Bayar") Color(0xFFD97706) else Color(0xFF107C42),
-                        fontFamily = InterFamily
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -288,6 +275,30 @@ fun OrderCard(
             OrderInfoRow(icon = Icons.Default.Inventory2, text = order.packageName, textColor = textColorSecondary)
             Spacer(modifier = Modifier.height(8.dp))
             OrderInfoRow(icon = Icons.Default.CalendarToday, text = order.date, textColor = textColorSecondary)
+            
+            if (order.status == "Belum Bayar") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    Surface(
+                        color = Color(0xFFFFF7ED),
+                        shape = RoundedCornerShape(6.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = order.status.uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD97706),
+                                fontFamily = InterFamily,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 1.dp, color = Color(0xFFF1F5F9))
@@ -331,6 +342,25 @@ fun OrderCard(
                             fontWeight = FontWeight.Bold,
                             fontFamily = InterFamily
                         )
+                    }
+                } else if (order.status == "Sudah Lunas") {
+                    Surface(
+                        color = Color(0xFFF0FDF4),
+                        shape = RoundedCornerShape(6.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = order.status.uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF107C42),
+                                fontFamily = InterFamily,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
                     }
                 }
             }
