@@ -15,7 +15,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
 
 
-    private const val BASE_URL = "http://192.168.250.176:3000/api/"
+
+    private const val BASE_URL = "http://192.168.1.8:3000/api/"
+
 
 
     private fun loggingInterceptor() = HttpLoggingInterceptor().apply {
@@ -26,8 +28,9 @@ object RetrofitClient {
     private fun authInterceptor(prefs: UserPreferences) = Interceptor { chain ->
         val token = runBlocking { prefs.getAuthTokenOnce() }
         val request = if (!token.isNullOrEmpty()) {
+            val formattedToken = if (token.startsWith("Bearer ", ignoreCase = true)) token else "Bearer $token"
             chain.request().newBuilder()
-                .header("Authorization", "Bearer $token")
+                .header("Authorization", formattedToken)
                 .build()
         } else {
             chain.request()
@@ -74,8 +77,10 @@ object RetrofitClient {
         if (newAccessToken.isNullOrEmpty()) return@Interceptor response
 
         response.close()
+        
+        val formattedNewToken = if (newAccessToken.startsWith("Bearer ", ignoreCase = true)) newAccessToken else "Bearer $newAccessToken"
         val retried: Request = chain.request().newBuilder()
-            .header("Authorization", "Bearer $newAccessToken")
+            .header("Authorization", formattedNewToken)
             .build()
         chain.proceed(retried)
     }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.baper_andoid.utils.getErrorMessage
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
@@ -70,7 +71,7 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
                     _error.value = response.message
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Gagal mengambil data rekap"
+                _error.value = e.getErrorMessage("Gagal mengambil data rekap")
             } finally {
                 _isLoading.value = false
             }
@@ -178,7 +179,7 @@ class RekapViewModel(private val repository: OrderRepository) : ViewModel() {
                 }
                 Toast.makeText(context, "Berhasil diunduh ke folder Downloads", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Gagal mengunduh: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Gagal mengunduh: ${e.getErrorMessage("Kesalahan koneksi")}", Toast.LENGTH_LONG).show()
             }
         }
     }

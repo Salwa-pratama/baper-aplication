@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.utils.getErrorMessage
 
 data class ProdukUiState(
     val isLoading: Boolean = false,
@@ -42,7 +43,7 @@ class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     productList = emptyList(),
-                    error = e.localizedMessage ?: "Gagal mengambil data produk"
+                    error = e.getErrorMessage("Gagal mengambil data produk")
                 )
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
@@ -62,7 +63,7 @@ class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
                     _uiState.value = _uiState.value.copy(error = response.message)
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.localizedMessage ?: "Gagal menambah produk")
+                _uiState.value = _uiState.value.copy(error = e.getErrorMessage("Gagal menambah produk"))
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
@@ -81,7 +82,7 @@ class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
                     _uiState.value = _uiState.value.copy(error = response.message)
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.localizedMessage ?: "Gagal memperbarui produk")
+                _uiState.value = _uiState.value.copy(error = e.getErrorMessage("Gagal memperbarui produk"))
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
@@ -99,7 +100,7 @@ class ProdukViewModel(private val repository: ProductRepository) : ViewModel() {
                     _uiState.value = _uiState.value.copy(error = response.message)
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.localizedMessage ?: "Gagal menghapus produk")
+                _uiState.value = _uiState.value.copy(error = e.getErrorMessage("Gagal menghapus produk"))
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }

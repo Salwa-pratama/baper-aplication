@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.utils.getErrorMessage
 
 
 sealed class LoginState {
@@ -51,7 +52,7 @@ class LoginViewModel(
                     _loginState.value = LoginState.Error(response.message)
                 }
             } catch (e: Exception) {
-                val errorMsg = e.localizedMessage ?: "Terjadi kesalahan koneksi"
+                val errorMsg = e.getErrorMessage("Terjadi kesalahan koneksi")
                 _loginState.value = LoginState.Error(errorMsg)
             }
         }

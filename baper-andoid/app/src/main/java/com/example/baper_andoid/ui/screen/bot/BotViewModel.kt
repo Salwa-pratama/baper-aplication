@@ -9,6 +9,7 @@ import com.example.baper_andoid.data.repository.BotRepository
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.baper_andoid.utils.getErrorMessage
 
 class BotViewModel(private val repository: BotRepository) : ViewModel() {
     private val _isBotActive = mutableStateOf(false)
@@ -55,7 +56,7 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
                     addLog("System", "Gagal memuat konfigurasi bot: ${response.message}")
                 }
             } catch (e: Exception) {
-                addLog("System", "Error koneksi server: ${e.message}")
+                addLog("System", "Error koneksi server: ${e.getErrorMessage("Kesalahan koneksi")}")
             } finally {
                 _isLoading.value = false
                 onComplete?.invoke()
@@ -79,7 +80,7 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
                     addLog("System", "Gagal toggle bot: ${response.message}")
                 }
             } catch (e: Exception) {
-                addLog("System", "Gagal memproses ke server")
+                addLog("System", e.getErrorMessage("Gagal memproses ke server"))
             }
         }
     }
@@ -115,7 +116,7 @@ class BotViewModel(private val repository: BotRepository) : ViewModel() {
                     addLog("System", "Gagal menyimpan: ${response.message}")
                 }
             } catch (e: Exception) {
-                addLog("System", "Gagal tersambung ke server")
+                addLog("System", e.getErrorMessage("Gagal tersambung ke server"))
             }
         }
     }

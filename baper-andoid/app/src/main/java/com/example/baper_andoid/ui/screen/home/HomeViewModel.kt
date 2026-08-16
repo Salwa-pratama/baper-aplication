@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.utils.getErrorMessage
 
 data class HomeUiState(
     val isLoading: Boolean = false,
@@ -53,7 +54,7 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
                 error = null
             )
         } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(error = e.localizedMessage)
+            _uiState.value = _uiState.value.copy(error = e.getErrorMessage())
         }
     }
 }

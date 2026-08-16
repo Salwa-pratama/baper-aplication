@@ -8,6 +8,7 @@ import com.example.baper_andoid.data.repository.OrderRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.utils.getErrorMessage
 
 class LihatPesananViewModel(private val repository: OrderRepository) : ViewModel() {
     private val _orders = mutableStateListOf<OrderResponse>()
@@ -38,7 +39,7 @@ class LihatPesananViewModel(private val repository: OrderRepository) : ViewModel
                     _error.value = response.message
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Terjadi kesalahan"
+                _error.value = e.getErrorMessage("Terjadi kesalahan")
             } finally {
                 _isLoading.value = false
             }
@@ -57,7 +58,7 @@ class LihatPesananViewModel(private val repository: OrderRepository) : ViewModel
                     _error.value = response.message
                 }
             } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Gagal mengonfirmasi pesanan"
+                _error.value = e.getErrorMessage("Gagal mengonfirmasi pesanan")
             } finally {
                 _isLoading.value = false
             }

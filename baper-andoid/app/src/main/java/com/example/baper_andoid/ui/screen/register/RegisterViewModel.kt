@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.baper_andoid.utils.getErrorMessage
 
 sealed class RegisterState {
     object Idle : RegisterState()
@@ -47,7 +48,7 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
                     _registerState.value = RegisterState.Error(response.message)
                 }
             } catch (e: Exception) {
-                _registerState.value = RegisterState.Error(e.localizedMessage ?: "Pendaftaran gagal")
+                _registerState.value = RegisterState.Error(e.getErrorMessage("Pendaftaran gagal"))
             }
         }
     }

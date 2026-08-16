@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import android.util.Log
+import com.example.baper_andoid.utils.getErrorMessage
 
 class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
     
@@ -44,7 +46,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     _chatList.addAll(response.data)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             } finally {
                 onComplete()
             }
@@ -63,7 +65,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     _currentCustomerName.value = response.data.customerName
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             } finally {
                 onComplete()
             }
@@ -81,7 +83,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             }
         }
     }
@@ -94,7 +96,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     _chatList.removeAll { it.sessionId == sessionId }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             }
         }
     }
@@ -108,7 +110,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     // atau sekadar menampilkannya tetap ada. Di sini kita biarkan saja.
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             }
         }
     }
@@ -150,7 +152,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             }
         }
     }
@@ -194,7 +196,7 @@ class ChatViewModel(private val repository: ChatRepository) : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ChatViewModel", e.getErrorMessage())
             }
         }
     }
